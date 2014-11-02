@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script src="easeljs-0.7.1.min.js"></script>
+<script src="jquery-2.1.1.js"></script>
+<title>TrainNavi2</title>
+<style type='text/css'>
+#wrapper{
+    height: auto;
+    overflow: auto;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height:100%;
+    min-height:100%;
+}
+
+canvas {  }
+
+</style>
+</head>
+<body>
+<input type="button" value="Start!" onclick="Start()"/><br />
+<div id="wrapper">
+<canvas height="2500">
+</canvas>
+</div>
+
+<input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
+<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br>
+
+<script src="tnmodel.js"></script>
+<script src="tnview.js"></script>
+<script src="tndb.js"></script>
+
+</body>
+</html>
