@@ -11,27 +11,57 @@ var TNDb = (function(){
 	var skinFile = "";
 
 	//有効な路線一覧
+	//DBモードでは配列番号+1を路線番号として扱う
+	//PHPに必ず渡す
 	var validLines = [];
+
+	//DBバッファ
+	//セクション名がキー、内容はテキストの配列
+	var dbBuffer = {};
 
 	//オプション
 	var options = {};
 
-	function ReadTrainsFromDB(fromTime, toTime)
+	function readTrainsFromDB(fromTime, toTime)
 	{
 
 	}
 
-	function ReadTrainsFromPackage(fromTime, toTime)
+	function readTrainsFromPackage(fromTime, toTime)
 	{
 
 	}
 
-	function ReadLinesFromDB()
+	function readLinesFromDB()
 	{
-
+		//路線、駅一覧などをゲット
+		//asyncにする必要はない
+		$.ajax({
+			async: false,
+			type: "POST",
+			url: "tnajax_init.php",
+			data: { Lines : validLines }
+		}).done(function( msg ) {
+			var retLines = msg.split("\n");
+			var currentArr = [];
+			for(var i=0; i<retLines.length; i++)
+			{
+				//セクションが始まった
+				if(retLines[i].indexOf("[") == 0)
+				{
+					var sectionName = retLines[i].substring(1, retLines[i].length-1);
+					currentArr = [];
+					dbBuffer[sectionName] = currentArr;
+				}
+				else
+				{
+					currentArr.push(retLines[i]);
+				}
+			}
+		});
 	}
 
-	function ReadLinesFromPackage()
+	function readLinesFromPackage()
 	{
 
 	}
@@ -43,21 +73,39 @@ var TNDb = (function(){
 			packageFile = name;
 		},
 
-		AddValidLines : function(line)
+		addValidLines : function(line)
 		{
 			validLines.push(line);
 		},
 		//路線、駅などのデータ読み込み(静的でよい)
-		ReadLines : function()
+		readLines : function()
 		{
-			if(packageFile == "") ReadLinesFromDB();
-			else ReadLinesFromPackage();
+			if(packageFile == "") readLinesFromDB();
+			else readLinesFromPackage();
 		},
 		//列車の読み込み
-		ReadTrains : function(fromTime, toTime)
+		readTrains : function(fromTime, toTime)
 		{
-			if(packageFile == "") ReadTrainsFromDB(fromTime, toTime);
-			else ReadTrainsFromPackage(fromTime, toTime);
+			if(packageFile == "") readTrainsFromDB(fromTime, toTime);
+			else readTrainsFromPackage(fromTime, toTime);
+		},
+		//あるセクションのデータゲット
+		getSectionData : function(sectionName)
+		{
+			if(sectionName in dbBuffer)
+			{
+				return dbBuffer[sectionName];
+			}
+			else return null;
+		},
+		//いらなくなったのでセクションのデータを削除
+		clearSectionData : function(sectionName)
+		{
+			if(sectionName in dbBuffer)
+			{
+				//本当にこれでいいんかね？要確認
+				delete dbBuffer[sectionName];
+			}
 		}
 	};
 
