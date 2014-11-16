@@ -1,6 +1,6 @@
 <?php
 
-require_once 'Funcs.php';
+require_once 'funcs.php';
 
 //路線一覧のHTMLを出力する
 function MakeListBox()
@@ -48,11 +48,11 @@ canvas {  }
 </head>
 <body>
 <div><?php echo MakeListBox() ?></div>
-<input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
-<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br>
+<!-- <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
+<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br> -->
 <input type="button" value="Start!" onclick="Start()"/><br />
 <div id="wrapper">
-<canvas height="2500">
+<canvas width="1600px" height="900px" >
 </canvas>
 </div>
 <script src="tnmodel.js"></script>
@@ -61,6 +61,7 @@ canvas {  }
 <script src="tnline.js"></script>
 <script src="tnstation.js"></script>
 <script src="tnhalfway.js"></script>
+<script src="tnrailroad.js"></script>
 <script src="tntrain.js"></script>
 <script src="tntrainkind.js"></script>
 <script>
@@ -69,6 +70,7 @@ function Start()
 	var aLineArr = [];
 	var lst = $("select[name='lineName[]']").val();
 	TNModel.init(lst);
+	TNView.init();
 }
 </script>
 </body>

@@ -8,14 +8,23 @@ var TNLine = function(text){
 	this.trainKinds = [];
 	this.stations = [];
 	this.halfways = [];
+	this.railroads = [];
 }
 
 TNLine.prototype = {
-	GetStation: function(stationID){
-		$.each(stations, function(i, val){
+	getStation: function(stationID){
+		$.each(this.stations, function(i, val){
 			if(val.stationID == stationID) return val;
 		});
 		return null;
+	},
+	getSortedPoints: function(){
+		var ret = [];
+		ret = ret.concat(this.stations).concat(this.halfways);
+		ret.sort(
+			function(a, b){
+				return a.kilo - b.kilo;
+			});
+		return ret;
 	}
-
 }

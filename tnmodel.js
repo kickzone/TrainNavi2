@@ -76,12 +76,26 @@ var TNModel = (function(){
 				}
 			});
 		}
+		//線路オブジェクト作成
+		$.each(lines, function(i, line){
+			var beforePoint = null;
+			//stationとhalfwayをpointとして同格に扱って、それを結ぶオブジェクトを作成
+			$.each(line.getSortedPoints(), function(j, point){
+				if(beforePoint != null)
+				{
+					line.railroads.push(new TNRailroad(line, beforePoint, point));
+				}
+				beforePoint = point;
+			});
+		});
 	}
 
 	//public
 	return{
 		init : function(aStrLines)
 		{
+			lines = [];
+			trains = [];
 			DB = TNDb
 			View = TNView;
 			makeLines(aStrLines);

@@ -5,26 +5,16 @@ var TNHalfway = function(line, text){
 	this.kilo = parseFloat(elements[0]);
 	this.latitude = parseFloat(elements[1]);
 	this.longitude = parseFloat(elements[2]);
-	this.sp1_1 = null;
-	this.sp1_2 = null;
-	if(parseFloat(elements[3]) != 0)
-	{
-		this.sp1_1 = {};
-		this.sp1_1.latitude = parseFloat(elements[3]);
-		this.sp1_1.longitude = parseFloat(elements[4]);
-		this.sp1_2 = {};
-		this.sp1_2.latitude = parseFloat(elements[5]);
-		this.sp1_2.longitude = parseFloat(elements[6]);
+	this.prevBezier = null;
+	if(parseFloat(elements[3]) != 0){
+		this.prevBezire = new TNBezier(parseFloat(elements[3]), parseFloat(elements[4]), parseFloat(elements[5]), parseFloat(elements[6]))
 	}
-	this.sp2_1 = null;
-	this.sp2_2 = null;
-	if(parseFloat(elements[7]) != 0)
-	{
-		this.sp2_1 = {};
-		this.sp2_1.latitude = parseFloat(elements[7]);
-		this.sp2_1.longitude = parseFloat(elements[8]);
-		this.sp2_2 = {};
-		this.sp2_2.latitude = parseFloat(elements[9]);
-		this.sp2_2.longitude = parseFloat(elements[10]);
+	this.nextBezier = null;
+	if(parseFloat(elements[7]) != 0){
+		this.nextBezier = new TNBezier(parseFloat(elements[7]), parseFloat(elements[8]), parseFloat(elements[9]), parseFloat(elements[10]))
 	}
+	this.prevRail = null;
+	this.nextRail = null;
+	this.prevPoint = null;
+	this.nextPoint = null;
 }
