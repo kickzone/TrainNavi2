@@ -10,9 +10,6 @@ var TNStation = function(line, text){
 	this.longitude = parseFloat(elements[4]);
 
 	//初期位置、係数
-	//this.initLatView = 0;
-	//this.initLonView = 0;
-	//this.coefXY = 0;
 	this.absX = 0;
 	this.absY = 0;
 	this.scale = 1.0;
@@ -30,7 +27,7 @@ var TNStation = function(line, text){
 }
 
 TNStation.prototype = {
-	makeObject : function(cj, stage, absX, abxY){
+	makeObject : function(cj, stage, absX, absY){
 		this.stage = stage;
 		this.cj = cj;
 		var sha = new cj.Shape()
@@ -43,7 +40,77 @@ TNStation.prototype = {
 		stage.addChild(sha);
 
 		this.absX = absX;
-		this.absY = abxY;
+		this.absY = absY;
+	},
+	//trainに絶対XY座標をセット
+	setXY : function(train){
+		var p = this.calcXY(train);
+		train.absX = p.x;
+		train.absY = p.y;
+	},
+	//trainのXY座標を計算
+	calcXY : function(train){
+		var p;
+		var route = train.currentRoute;
+		var railNext = this.getNextRail(train.isNobori);
+		var railPrev = this.getPrevRail(train.isNobori);
+		//始発駅かどうか
+		if(this == train.firstStation()){
+			if(train.prevTrain){
+				//乗り入れがあった場合は、駅に接続する線路との角の二等分線上の値を計算する
+				var railPrevPrev = train.prevTrain.lastStation().getPrevRail(train.prevTrain.isNobori);
+				p = TNFuncs.calcBisectUnitVector(
+						railPrevPrev.secondLastPoint(train.prevTrain.isNobori),
+						{x: this.absX, y:this.absY},
+						railNext.secondPoint(train.isNobori)
+				);
+			} else {
+				//乗り入れがなければ、法線ベクトルを足す
+				p = TNFuncs.calcNormalUnitVector(
+						{x: this.absX, y:this.absY},
+						railNext.secondPoint(train.isNobori)
+				);
+			}
+		}
+		//終着駅かどうか
+		else if(this == train.lastStation()){
+			if(train.nextTrain){
+				//乗り入れがある場合は、駅から伸びる線路との角の二等分線上の値を計算する
+				var railNextNext = train.nextTrain.firstStation().getNextRail(train.nextTrain.isNobori);
+				p = TNFuncs.calcBisectUnitVector(
+						railPrev.secondLastPoint(train.isNobori),
+						{x: train.nextTrain.firstStation().absX, y:train.nextTrain.firstStation().absY},
+						railNextNext.secondPoint(train.nextTrain.isNobori)
+					);
+			} else {
+				//乗り入れがなければ、法線ベクトルを足す
+				p = TNFuncs.calcNormalUnitVector(
+						railPrev.secondLastPoint(train.isNobori),
+						{x: this.absX, y:this.absY}
+				);
+			}
+		}
+		//それ以外は途中駅
+		else{
+			var p1 = railPrev.secondLastPoint(train.isNobori);
+			var p2 = {x: this.absX, y:this.absY};
+			p = TNFuncs.calcBisectUnitVector(
+					railPrev.secondLastPoint(train.isNobori),
+					{x: this.absX, y:this.absY},
+					railNext.secondPoint(train.isNobori)
+			);
+		}
+		//ドット数を掛けたものを足して返す
+		return {x: this.absX + p.x*TNView.tdist, y: this.absY + p.y*TNView.tdist};
+	},
+	getPrevRail : function(isNobori){
+		return isNobori? this.nextRail : this.prevRail;
+	},
+	getNextRail : function(isNobori){
+		return isNobori? this.prevRail : this.nextRail;
+	},
+	getNextPoint : function(isNobori){
+		return isNobori? this.prevPoint : this.nextPoint;
 	},
 	//倍率設定
 	setScale : function(scale){
@@ -52,9 +119,6 @@ TNStation.prototype = {
 		this.shape.scaleY = scale;
 	},
 	//オブジェクト移動 スクロール時など
-	//moveObject : function(latView, lonView, centerX, centerY){
-		//var x = ((this.longitude - this.initLonView) * this.coefXY + (lonView - this.initLonView) * this.coefXY) * this.scale + centerX;
-		//var y = ((this.initLatView - this.latitude) * this.coefXY + (this.initLatView - latView) * this.coefXY) * this.scale + centerY;
 	moveObject : function(relX, relY){
 		this.shape.x = this.absX * this.scale + relX;
 		this.shape.y = this.absY * this.scale + relY;

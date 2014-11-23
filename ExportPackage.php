@@ -109,6 +109,7 @@ function ExportPackage($fileName, $lines, $options)
 //この関数は他でも使いまわします
 function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub)
 {
+	$trainkindname = "";
 	if(array_key_exists($row['trainkind'], $trainKindListSub))
 	{
 		$trainkind = $trainKindListSub[$row['trainkind']];
@@ -117,18 +118,34 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 	else
 	{
 		//列車種類の例外
-		//いまのところ特急くらいしかない、将来的に追加する
-		$trainkind = $trainKindListSub["特急"];
-		$trainkindname = $row['trainkind'];
+		switch($row['trainkind'])
+		{
+			case "私鉄無料急行":
+				$trainkind =  $trainKindListSub["急行"];
+				break;
+			default:
+				//複雑なものは特急だろう
+				$trainkind = $trainKindListSub["特急"];
+				$trainkindname = $row['trainkind'];
+				break;
+		}
 	}
 	$nextline = "";
 	$nexttrain = "";
-	if($row['nextlinename'] != "" && array_key_exists($row['nextlinename'], $lineIDList))
+	$terminal = "";
+	if($row['nextlinename'] != "")
 	{
-		$nextline = $lineIDList[$row['nextlinename']];
-		$nexttrain = $row['nexttrainname'];
+		if(array_key_exists($row['nextlinename'], $lineIDList))
+		{
+			$nextline = $lineIDList[$row['nextlinename']];
+			$nexttrain = $row['nexttrainname'];
+		}
+		else
+		{
+			$terminal = FindTerminal($mysqli, $row['nextlinename'], $row['nexttrainname']);
+		}
 	}
-	$ret = $row['trainname'].",".$row['service'].",$trainkind,$trainkindname,$nextline,$nexttrain";
+	$ret = $row['trainname'].",".$row['service'].",$trainkind,$trainkindname,$nextline,$nexttrain,$terminal";
 	//列車名を使ってサブクエリを作成
 	$query2 = "SELECT *, DATE_FORMAT(starttime, '%k:%i') AS start, DATE_FORMAT(endtime, '%k:%i') AS end FROM tnroute WHERE linename='".$row['linename']."' AND trainname='".$row['trainname']."'";
 	$result2 = ExecQuery($mysqli, $query2);
@@ -155,6 +172,41 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 		$endBefore = $row2['end'];
 	}
 
+	return $ret;
+}
+
+//2014/11/19 乗り入れ先の路線がない場合、画面表示するために終着駅の文字列を得る。
+function FindTerminal($mysqli, $nextlinename, $nexttrainname)
+{
+	$ret = "";
+	$query = "SELECT * FROM tntrain WHERE linename='$nextlinename' AND trainname='$nexttrainname'";
+	$result = ExecQuery($mysqli, $query);
+	while($result->num_rows > 0)
+	{
+		$row = $result->fetch_assoc();
+		if($row['nextlinename'] == "")
+		{
+			//終点
+			//この列車の終着駅名をゲット
+			$query = "SELECT * FROM tnroute WHERE linename='$nextlinename' AND trainname='$nexttrainname'";
+			$result = ExecQuery($mysqli, $query);
+			if($result->num_rows > 0)
+			{
+				$result->data_seek($result->num_rows-1);
+				$row = $result->fetch_assoc();
+				$ret = $row['endstation'];
+			}
+			break;
+		}
+		else
+		{
+			//まだ先がある
+			$nextlinename = $row['nextlinename'];
+			$nexttrainname = $row['nexttrainname'];
+			$query = "SELECT * FROM tntrain WHERE linename='$nextlinename' AND trainname='$nexttrainname'";
+			$result = ExecQuery($mysqli, $query);
+		}
+	}
 	return $ret;
 }
 

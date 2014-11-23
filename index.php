@@ -48,13 +48,14 @@ canvas {  }
 </head>
 <body>
 <div><?php echo MakeListBox() ?></div>
-<!-- <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
-<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br> -->
-<input type="button" value="Start!" onclick="Start()"/><br />
+<input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
+<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br>
+<input type="button" value="Start!" onclick="Start()"/><span id="status"></span><br />
 <div id="wrapper">
 <canvas width="1600px" height="900px" >
 </canvas>
 </div>
+<script src="tnfuncs.js"></script>
 <script src="tnmodel.js"></script>
 <script src="tnview.js"></script>
 <script src="tndb.js"></script>
@@ -69,8 +70,18 @@ function Start()
 {
 	var aLineArr = [];
 	var lst = $("select[name='lineName[]']").val();
-	TNModel.init(lst);
+	var startHour = $("#hour").val();
+	var startMinute = $("#minute").val();
+	var speed = $("#speed").val();
+	var fps =  $("#fps").val();
+	var startTime = new Date();
+	startTime.setHours(parseInt(startHour));
+	startTime.setMinutes(parseInt(startMinute));
+	startTime.setSeconds(0);
+	startTime.setMilliseconds(0);
+	TNModel.init(lst, startTime, parseInt(speed), parseInt(fps));
 	TNView.init();
+	TNModel.start();
 }
 </script>
 </body>

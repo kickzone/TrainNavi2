@@ -13,10 +13,18 @@ var TNLine = function(text){
 
 TNLine.prototype = {
 	getStation: function(stationID){
+		var ret = null;
 		$.each(this.stations, function(i, val){
-			if(val.stationID == stationID) return val;
+			if(val.stationID == stationID) ret = val;
 		});
-		return null;
+		return ret;
+	},
+	getTrainKind: function(trainKindID){
+		var ret = null;
+		$.each(this.trainKinds, function(i, val){
+			if(val.trainKindID == trainKindID) ret = val;
+		});
+		return ret;
 	},
 	getSortedPoints: function(){
 		var ret = [];

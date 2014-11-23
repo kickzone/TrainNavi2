@@ -4,5 +4,6 @@ var TNTrainKind = function(line, text){
 	this.line = line;
 	var elements = text.split(",");
 	this.trainKindID = parseInt(elements[0]);
-	this.trainKindColor = elements[1];
+	this.trainKindName = elements[1];
+	this.trainKindColor = elements[2];
 }

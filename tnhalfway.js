@@ -17,4 +17,7 @@ var TNHalfway = function(line, text){
 	this.nextRail = null;
 	this.prevPoint = null;
 	this.nextPoint = null;
+
+	this.absX = 0;
+	this.absY = 0;
 }

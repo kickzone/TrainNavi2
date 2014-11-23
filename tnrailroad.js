@@ -3,15 +3,11 @@ var TNRailroad = function(line, start, end){
 	this.line = line;
 	this.start = start;
 	this.end = end;
-	this.trains = [];
 	this.bezier = null;
 	if(start.nextBezier) this.bezier = start.nextBezier;
 	if(end.prevBezire) this.bezier = end.prevBezier;
 
 	//初期位置、係数
-	//this.initLatView = 0;
-	//this.initLonView = 0;
-	//this.coefXY = 0;
 	this.absX = 0;
 	this.absY = 0;
 	this.scale = 1.0;
@@ -28,14 +24,11 @@ TNRailroad.prototype = {
 		this.stage = stage;
 		var gr = new cj.Graphics();
 		//ベジエの場合 未実装
-		if(this.bezirer){
+		if(this.bezire){
 
 		//直線の場合
 		}else{
 			 //線の太さ3
-			//XY座標計算
-			//var x = (this.end.longitude - this.start.longitude) * coefXY;
-			//var y = (this.start.latitude - this.end.latitude) * coefXY;
 			//路線を描画
 			gr.setStrokeStyle(3).beginStroke(this.line.lineColor).moveTo(0, 0).lineTo(x, y).endStroke();
 		}
@@ -46,11 +39,52 @@ TNRailroad.prototype = {
 		sha.alpha = 0.8;
 		//stageに追加
 		stage.addChild(sha);
+	},
+	//2番目の点
+	secondPoint : function(isNobori){
+		//ベジエの場合 未実装
+		if(this.bezire){
 
-		//初期位置、係数を保存しておく
-		//this.initLatView = latView;
-		//this.initLonView = lonView;
-		//this.coefXY = coefXY;
+		}else{
+			if(isNobori){
+				return {x: this.start.absX, y: this.start.absY}
+			}else{
+				return {x: this.end.absX, y: this.end.absY}
+			}
+		}
+	},
+	//最後から2番目の点
+	secondLastPoint : function(isNobori){
+		if(this.bezire){
+			//ベジエの場合 未実装
+		}else{
+			if(isNobori){
+				return {x: this.end.absX, y: this.end.absY}
+			} else{
+				return {x: this.start.absX, y: this.start.absY}
+			}
+		}
+	},
+	//trainに絶対XY座標をセット
+	setXY : function(train){
+		if(this.bezire){
+			//ベジエの場合 未実装
+		} else{
+			//始点と終点を決定
+			//下りならstart→endの順
+			var start = train.isNobori? this.end : this.start;
+			var startPos = this.start.calcXY(train);
+			var end = train.isNobori? this.start : this.end;
+			var endPos = this.end.calcXY(train);
+
+			//trainのkiloを見て位置を判断
+			var kiloStartEnd = this.end.kilo - this.start.kilo;
+			var kiloThis = train.kilo - this.start.kilo;
+			var vecX = endPos.x - startPos.x;
+			var vecY = endPos.y - startPos.y;
+			train.absX = startPos.x + vecX * kiloThis / kiloStartEnd;
+			train.absY = startPos.y + vecY * kiloThis / kiloStartEnd;
+		}
 	},
 	//倍率設定
 	setScale : function(scale){
@@ -59,9 +93,6 @@ TNRailroad.prototype = {
 		this.shape.scaleY = scale;
 	},
 	//オブジェクト移動 スクロール時など
-	//moveObject : function(latView, lonView, centerX, centerY){
-	//	var x = ((this.start.longitude - this.initLonView) * this.coefXY + (lonView - this.initLonView) * this.coefXY) * this.scale + centerX;
-	//	var y = ((this.initLatView - this.start.latitude) * this.coefXY + (this.initLatView - latView) * this.coefXY) * this.scale + centerY;
 	moveObject : function(relX, relY){
 		this.shape.x = this.absX * this.scale + relX;
 		this.shape.y = this.absY * this.scale + relY;

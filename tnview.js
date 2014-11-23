@@ -19,11 +19,6 @@ var TNView = (function(cj){
 	var latitude_base_rd = 35.247455;
 	var longitude_base_rd = 139.709413
 
-	//現在の北緯東経 デフォルト値は基準値の左上
-	//廃止
-	//var latitude = (latitude_base_lu + latitude_base_rd) / 2;
-	//var longitude = (longitude_base_lu + longitude_base_rd) / 2;
-
 	//canvasの幅と高さ
 	var width, height;
 
@@ -36,8 +31,41 @@ var TNView = (function(cj){
 	//各オブジェクト北緯・東経からx-y座標を求める際に掛ける係数
 	var coefXY;
 
+	//列車を何ピクセル分線路から離すか
+	var tdist = 5;
+
 	//スキンファイル
 	var skinFile = null;
+
+	//緯度経度で初期化
+	function InitLatLon(){
+		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
+		var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
+		$.each(lines, function(i, line){
+			$.each(line.getSortedPoints(), function(j, point){
+				if(minLat > point.latitude) minLat = point.latitude;
+				if(maxLat < point.latitude) maxLat = point.latitude;
+				if(minLon > point.longitude) minLon = point.longitude;
+				if(maxLon < point.longitude) maxLon = point.longitude;
+			});
+		});
+		//端の調整
+		minLat -= 0.01;
+		minLon -= 0.01;
+		maxLat += 0.01;
+		maxLon += 0.01;
+
+		//canvasの幅、高さと基準値を使って、X-Y座標に掛けるための係数を得る
+		var coefW = width / (maxLon - minLon);
+		var coefH = height / (maxLat - minLat);
+		coefXY = Math.min(coefW, coefH);
+		//latitude = (maxLat + minLat) / 2;
+		//longitude = (maxLon + minLon) / 2;
+		latitude_base_lu = maxLat;
+		longitude_base_lu = minLon;
+		latitude_base_rd = minLat;
+		longitude_base_rd = maxLon;
+	}
 
 	//線路のオブジェクトを作成
 	function DrawLines(){
@@ -66,8 +94,8 @@ var TNView = (function(cj){
 		});
 	}
 
-	//線路のX-Y座標を移動
-	function MoveLines(){
+	//線路や列車などの相対X-Y座標を移動
+	function MoveObjects(){
 		$.each(lines, function(i, line){
 			var beforePoint = null;
 			$.each(line.stations, function(j, station){
@@ -79,55 +107,121 @@ var TNView = (function(cj){
 		});
 	}
 
+	//倍率変更
+	function SetScale(){
+		$.each(lines, function(i, line){
+			var beforePoint = null;
+			$.each(line.stations, function(j, station){
+				station.setScale(scale);
+			});
+			$.each(line.railroads, function(j, railroad){
+				railroad.setScale(scale);
+			});
+		});
+	}
 
 	//列車を描画
 	function DrawTrains()
 	{
-
+		var trains = Model.getTrains();
+		var currentTime = Model.getCurrentTime();
+		var currentTimeMinus1Min = new Date(currentTime.getTime() - 60 * 1000);
+		var currentTimePlus1Min = new Date(currentTime.getTime() + 60 * 1000);
+		$.each(trains, function(i, train){
+			if(train.onObject){
+				if(!train.shape){
+					train.makeObject(cj, stage);
+				}
+				if(!train.onRail && !train.ended){
+					//rail上に乗ってない場合
+					//開始1分前ならstageに乗せる
+					//ただし、直通列車はギリギリで載せる
+					if(train.prevTrain){
+						if(train.prevTrain.endTime() >= currentTime){
+							train.putToStage();
+							train.started = true;
+							train.shape.text = "●";
+						}
+					}
+					else if(train.startTime() <= currentTimePlus1Min){
+						train.putToStage();
+						if(train.startTime() <= currentTime){
+							train.started = true;
+							train.shape.text = "●";
+						}
+					}
+					this.onRail = true;
+				}
+				else{
+					//rail上に乗ってる場合
+					if(train.startTime() <= currentTime && train.endTime() > currentTime){
+						if(!train.started){
+							//発車したらテキストを変える
+							train.started = true;
+							train.shape.text = "●";
+						}
+					}
+					else{
+						//終了時間になった
+						//1分たったら削除
+						//ただし直通先がある場合は即時削除
+						if(train.nextTrain){
+							if(!train.ended){
+								train.ended = true;
+								train.removeFromStage();
+								train.onRail = false;
+								train.toDelete = true;
+							}
+						}else{
+							if(!train.ended){
+								train.ended = true;
+								//終点まで来たらテキストを変える
+								train.shape.text = "◎";
+							}
+							if(train.endTime() >= currentTimeMinus1Min){
+								train.removeFromStage();
+								train.onRail = false;
+								train.toDelete = true;
+							}
+						}
+					}
+				}
+				//位置を更新
+				train.onObject.setXY(train);
+				train.moveObject(relX, relY);
+			}
+		});
+		stage.update();
 	}
 
 	//public
 	return{
 		//初期化
 		init: function(){
+			//必要なオブジェクトをゲットするなど
 			Model = TNModel;
-			lines = Model.GetLines();
+			lines = Model.getLines();
 			stage = new cj.Stage($("canvas")[0]);
 			stage.removeAllChildren();
 			width = $("canvas")[0].width;
 			height = $("canvas")[0].height;
-			//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
-			var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
-			$.each(lines, function(i, line){
-				$.each(line.getSortedPoints(), function(j, point){
-					if(minLat > point.latitude) minLat = point.latitude;
-					if(maxLat < point.latitude) maxLat = point.latitude;
-					if(minLon > point.longitude) minLon = point.longitude;
-					if(maxLon < point.longitude) maxLon = point.longitude;
-				});
-			});
-			//端の調整
-			minLat -= 0.01;
-			minLon -= 0.01;
-			maxLat += 0.01;
-			maxLon += 0.01;
+			if(skinFile){
 
-			//canvasの幅、高さと基準値を使って、X-Y座標に掛けるための係数を得る
-			var coefW = width / (maxLon - minLon);
-			var coefH = height / (maxLat - minLat);
-			coefXY = Math.min(coefW, coefH);
-			//latitude = (maxLat + minLat) / 2;
-			//longitude = (maxLon + minLon) / 2;
-			latitude_base_lu = maxLat;
-			longitude_base_lu = minLon;
-			latitude_base_rd = minLat;
-			longitude_base_rd = maxLon;
+			}else{
+				//スキンなし 緯度経度から路線を作成する
+				InitLatLon();
+			}
+			//路線描画
 			DrawLines();
-			MoveLines();
+			MoveObjects();
 			stage.update();
+		},
+		drawTrains : function(){
+			DrawTrains();
 		},
 		//x-yに掛ける係数
 		coefXY: coefXY,
+		tdist: tdist
 	};
 
 })(createjs);
