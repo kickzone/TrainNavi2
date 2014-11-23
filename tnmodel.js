@@ -169,13 +169,13 @@ var TNModel = (function(){
 					if(trainInPool.nextLineID && !trainInPool.nextTrain){
 						if(trainInPool.nextLineID == train.line.lineID && trainInPool.nextTrainName == train.trainName){
 							trainInPool.nextTrain = train;
-							train.beforeTrain = trainInPool;
+							train.prevTrain = trainInPool;
 						}
 					}
 					if(train.nextLineID && !train.nextTrain){
 						if(train.nextLineID == trainInPool.line.lineID && train.nextTrainName == trainInPool.trainName){
 							train.nextTrain = trainInPool;
-							trainInPool.beforeTrain = train;
+							trainInPool.prevTrain = train;
 						}
 					}
 				});
@@ -227,7 +227,7 @@ var TNModel = (function(){
 			    if (!onInit) {
 			    	//初期化が終わった
 			    	clearInterval(wait);
-						//初期状態の列車をセット
+					//初期状態の列車をセット
 					stdTime = new Date();
 					$("#status").text("列車描画中...");
 					OnTickMain();

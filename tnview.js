@@ -32,7 +32,7 @@ var TNView = (function(cj){
 	var coefXY;
 
 	//列車を何ピクセル分線路から離すか
-	var tdist = 5;
+	var tdist = 10;
 
 	//スキンファイル
 	var skinFile = null;
@@ -132,33 +132,41 @@ var TNView = (function(cj){
 				if(!train.shape){
 					train.makeObject(cj, stage);
 				}
-				if(!train.onRail && !train.ended){
+				if(!train.onStage && !train.ended){
 					//rail上に乗ってない場合
 					//開始1分前ならstageに乗せる
 					//ただし、直通列車はギリギリで載せる
 					if(train.prevTrain){
-						if(train.prevTrain.endTime() >= currentTime){
+						if(train.prevTrain.endTime() <= currentTime && currentTime < train.endTime()){
+							//位置を更新
+							train.onObject.setXY(train);
+							train.moveObject(relX, relY);
 							train.putToStage();
 							train.started = true;
 							train.shape.text = "●";
 						}
 					}
-					else if(train.startTime() <= currentTimePlus1Min){
+					else if(train.startTime() <= currentTimePlus1Min && currentTime < train.endTime()){
+						//位置を更新
+						train.onObject.setXY(train);
+						train.moveObject(relX, relY);
 						train.putToStage();
 						if(train.startTime() <= currentTime){
 							train.started = true;
 							train.shape.text = "●";
 						}
 					}
-					this.onRail = true;
 				}
 				else{
 					//rail上に乗ってる場合
-					if(train.startTime() <= currentTime && train.endTime() > currentTime){
-						if(!train.started){
-							//発車したらテキストを変える
-							train.started = true;
-							train.shape.text = "●";
+					if(train.startTime() <= currentTimePlus1Min && currentTime <= train.endTime()){
+						if(train.startTime() <= currentTime && currentTime <= train.endTime())
+						{
+							if(!train.started){
+								//発車したらテキストを変える
+								train.started = true;
+								train.shape.text = "●";
+							}
 						}
 					}
 					else{
@@ -169,7 +177,6 @@ var TNView = (function(cj){
 							if(!train.ended){
 								train.ended = true;
 								train.removeFromStage();
-								train.onRail = false;
 								train.toDelete = true;
 							}
 						}else{
@@ -178,17 +185,16 @@ var TNView = (function(cj){
 								//終点まで来たらテキストを変える
 								train.shape.text = "◎";
 							}
-							if(train.endTime() >= currentTimeMinus1Min){
+							if(train.endTime() <= currentTimeMinus1Min){
 								train.removeFromStage();
-								train.onRail = false;
 								train.toDelete = true;
 							}
 						}
 					}
+					//位置を更新
+					train.onObject.setXY(train);
+					train.moveObject(relX, relY);
 				}
-				//位置を更新
-				train.onObject.setXY(train);
-				train.moveObject(relX, relY);
 			}
 		});
 		stage.update();

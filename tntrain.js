@@ -75,6 +75,9 @@ var TNTrain = function(line, text){
 	this.cj = null;
 	this.stage = null;
 	this.shape = null;
+	//自分の文字の大きさを保存
+	this.sizeX = 0;
+	this.sizeY = 0;
 
 	//現在の営業キロ
 	this.kilo = null;
@@ -84,8 +87,8 @@ var TNTrain = function(line, text){
 	this.currentRoute = this.routes[0];
 
 	//加減速にかかる時間(秒) デフォルトは30秒
-	this.accTime = 30;
-	this.decTime = 30;
+	this.accTime = 60;
+	this.decTime = 60;
 
 	//現在時速(km/h)
 	this.velocity = 0;
@@ -129,7 +132,9 @@ TNTrain.prototype = {
 		//ToDo:倍率によって大きさを変える必要がある
 		var sha = new cj.Text("○", "12px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
 		this.shape = sha;
-		//sha.alpha = 0.8;
+		this.sizeX = sha.getMeasuredWidth();
+		this.sizeY = sha.getMeasuredHeight();
+		sha.alpha = 0.7;
 		//var gr = sha.graphics;
 	},
 	setTime : function(time){
@@ -253,8 +258,8 @@ TNTrain.prototype = {
 	},
 	//オブジェクト移動 スクロール時など
 	moveObject : function(relX, relY){
-		this.shape.x = this.absX * this.scale + relX;
-		this.shape.y = this.absY * this.scale + relY;
+		this.shape.x = (this.absX - this.sizeX/2) * this.scale + relX;
+		this.shape.y = (this.absY - this.sizeY/2) * this.scale + relY;
 	},
 	putToStage : function(){
 		this.stage.addChild(this.shape);
