@@ -141,9 +141,10 @@ var TNView = (function(cj){
 							//位置を更新
 							train.onObject.setXY(train);
 							train.moveObject(relX, relY);
+							train.start();
 							train.putToStage();
-							train.started = true;
-							train.shape.text = "●";
+							//train.started = true;
+							//train.shape.text = "●";
 						}
 					}
 					else if(train.startTime() <= currentTimePlus1Min && currentTime < train.endTime()){
@@ -152,8 +153,9 @@ var TNView = (function(cj){
 						train.moveObject(relX, relY);
 						train.putToStage();
 						if(train.startTime() <= currentTime){
-							train.started = true;
-							train.shape.text = "●";
+							train.start();
+							//train.started = true;
+							//train.shape.text = "●";
 						}
 					}
 				}
@@ -164,8 +166,9 @@ var TNView = (function(cj){
 						{
 							if(!train.started){
 								//発車したらテキストを変える
-								train.started = true;
-								train.shape.text = "●";
+								//train.started = true;
+								//train.shape.text = "●";
+								train.start();
 							}
 						}
 					}
@@ -175,15 +178,17 @@ var TNView = (function(cj){
 						//ただし直通先がある場合は即時削除
 						if(train.nextTrain){
 							if(!train.ended){
-								train.ended = true;
+								//train.ended = true;
+								train.end();
 								train.removeFromStage();
 								train.toDelete = true;
 							}
 						}else{
 							if(!train.ended){
-								train.ended = true;
+								//train.ended = true;
 								//終点まで来たらテキストを変える
-								train.shape.text = "◎";
+								//train.shape.text = "◎";
+								train.end();
 							}
 							if(train.endTime() <= currentTimeMinus1Min){
 								train.removeFromStage();

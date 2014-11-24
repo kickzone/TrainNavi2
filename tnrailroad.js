@@ -72,18 +72,40 @@ TNRailroad.prototype = {
 		} else{
 			//始点と終点を決定
 			//下りならstart→endの順
-			var start = train.isNobori? this.end : this.start;
-			var startPos = this.start.calcXY(train);
-			var end = train.isNobori? this.start : this.end;
-			var endPos = this.end.calcXY(train);
+			var npStart = this.start.calcNormalVector(train);
+			var startX = this.start.absX + npStart.x*TNView.tdist;
+			var startY = this.start.absY + npStart.y*TNView.tdist;
+			var npEnd = this.end.calcNormalVector(train);
+			var endX = this.end.absX + npEnd.x*TNView.tdist
+			var endY = this.end.absY + npEnd.y*TNView.tdist;
 
 			//trainのkiloを見て位置を判断
 			var kiloStartEnd = this.end.kilo - this.start.kilo;
 			var kiloThis = train.kilo - this.start.kilo;
-			var vecX = endPos.x - startPos.x;
-			var vecY = endPos.y - startPos.y;
-			train.absX = startPos.x + vecX * kiloThis / kiloStartEnd;
-			train.absY = startPos.y + vecY * kiloThis / kiloStartEnd;
+			var vecX = endX - startX;
+			var vecY = endY - startY;
+			train.absX = startX + vecX * kiloThis / kiloStartEnd;
+			train.absY = startY + vecY * kiloThis / kiloStartEnd;
+			//さらに行先の文字列にも位置をセット
+			for(var i=0; i<train.destText.length; i++){
+				var factor = i+1;
+				if(npStart.x + npStart.y < 0) factor = (train.destText.length-i+1);
+				var dist = TNView.tdist + (factor * train.size * 1.5);
+				startX = this.start.absX + npStart.x * dist;
+				startY = this.start.absY + npStart.y * dist;
+
+				factor = i+1;
+				if(npEnd.x + npEnd.y < 0) factor = (train.destText.length-i+1);
+				dist = TNView.tdist + (factor * train.size * 1.5);
+				endX = this.end.absX + npEnd.x * dist;
+				endY = this.end.absY + npEnd.y * dist;
+
+				vecX = endX - startX;
+				vecY = endY - startY;
+
+				train.destText[i].absX = startX + vecX * kiloThis / kiloStartEnd - train.destTextWidth[i]/2;
+				train.destText[i].absY = startY + vecY * kiloThis / kiloStartEnd - train.destTextHeight[i]/2;
+			}
 		}
 	},
 	//倍率設定

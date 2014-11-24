@@ -24,6 +24,10 @@ var TNStation = function(line, text){
 	this.cj = null;
 	this.stage = null;
 	this.shape = null;
+
+	//キャッシュしてみる
+	this.pNobori = null;
+	this.pKudari = null;
 }
 
 TNStation.prototype = {
@@ -44,12 +48,20 @@ TNStation.prototype = {
 	},
 	//trainに絶対XY座標をセット
 	setXY : function(train){
-		var p = this.calcXY(train);
-		train.absX = p.x;
-		train.absY = p.y;
+		var p = this.calcNormalVector(train);
+		train.absX = this.absX + p.x*TNView.tdist;
+		train.absY = this.absY + p.y*TNView.tdist;
+		//さらに行先の文字列にも位置をセット
+		for(var i=0; i<train.destText.length; i++){
+			var factor = i+1;
+			if(p.x + p.y < 0) factor = (train.destText.length-i+1);
+			var dist = TNView.tdist + (factor * train.size * 1.5);
+			train.destText[i].absX = this.absX + p.x * dist - train.destTextWidth[i]/2;
+			train.destText[i].absY = this.absY + p.y * dist - train.destTextHeight[i]/2;
+		}
 	},
-	//trainのXY座標を計算
-	calcXY : function(train){
+	//trainの位置のための単位ベクトルを算出
+	calcNormalVector : function(train){
 		var p;
 		var route = train.currentRoute;
 		var railNext = this.getNextRail(train.isNobori);
@@ -92,16 +104,22 @@ TNStation.prototype = {
 		}
 		//それ以外は途中駅
 		else{
-			var p1 = railPrev.secondLastPoint(train.isNobori);
-			var p2 = {x: this.absX, y:this.absY};
-			p = TNFuncs.calcBisectUnitVector(
-					railPrev.secondLastPoint(train.isNobori),
-					{x: this.absX, y:this.absY},
-					railNext.secondPoint(train.isNobori)
-			);
+			if(train.isNobori && this.pNobori) p = this.pNobori;
+			else if(!train.isNobori && this.pKudari) p = this.pKudari;
+			else
+			{
+				var p1 = railPrev.secondLastPoint(train.isNobori);
+				var p2 = {x: this.absX, y:this.absY};
+				p = TNFuncs.calcBisectUnitVector(
+						railPrev.secondLastPoint(train.isNobori),
+						{x: this.absX, y:this.absY},
+						railNext.secondPoint(train.isNobori)
+				);
+				if(train.isNobori) this.pNobori = p;
+				else this.pKudari = p;
+			}
 		}
-		//ドット数を掛けたものを足して返す
-		return {x: this.absX + p.x*TNView.tdist, y: this.absY + p.y*TNView.tdist};
+		return p;
 	},
 	getPrevRail : function(isNobori){
 		return isNobori? this.nextRail : this.prevRail;

@@ -75,9 +75,12 @@ var TNTrain = function(line, text){
 	this.cj = null;
 	this.stage = null;
 	this.shape = null;
-	//自分の文字の大きさを保存
-	this.sizeX = 0;
-	this.sizeY = 0;
+
+	//行先オブジェクト
+	this.destText = [];
+	//テキストの幅と高さ
+	this.destTextWidth = [];
+	this.destTextHeight = [];
 
 	//現在の営業キロ
 	this.kilo = null;
@@ -86,12 +89,15 @@ var TNTrain = function(line, text){
 	//現在のroute
 	this.currentRoute = this.routes[0];
 
-	//加減速にかかる時間(秒) デフォルトは30秒
+	//加減速にかかる時間(秒) デフォルトは60秒
 	this.accTime = 60;
 	this.decTime = 60;
 
 	//現在時速(km/h)
 	this.velocity = 0;
+
+	//円の大きさ
+	this.size = 6;
 
 	//stageに乗っているかどうかのフラグ Viewでチェックする
 	this.onStage = false;
@@ -130,12 +136,23 @@ TNTrain.prototype = {
 		this.stage = stage;
 		this.cj = cj;
 		//ToDo:倍率によって大きさを変える必要がある
-		var sha = new cj.Text("○", "12px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
+		//2014/11/24 shapeに変更した
+		//var sha = new cj.Text("○", "12px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
+		var sha = new cj.Shape();
+		var gr = sha.graphics;
+		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		this.shape = sha;
-		this.sizeX = sha.getMeasuredWidth();
-		this.sizeY = sha.getMeasuredHeight();
 		sha.alpha = 0.7;
-		//var gr = sha.graphics;
+		var textSize = this.size * 1.5;
+		//行先の文字列オブジェクトを作成
+		var destStr = this.getDestStr();
+		for(var i=0; i<destStr.length; i++){
+			var shaDest = new cj.Text(destStr.charAt(i), textSize.toString(10) + "px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
+			shaDest.alpha = 0.7;
+			this.destText.push(shaDest);
+			this.destTextWidth.push(shaDest.getMeasuredWidth());
+			this.destTextHeight.push(shaDest.getMeasuredHeight());
+		}
 	},
 	setTime : function(time){
 		//現在時刻timeを得て、kiloと属するオブジェクトを決定する
@@ -258,15 +275,26 @@ TNTrain.prototype = {
 	},
 	//オブジェクト移動 スクロール時など
 	moveObject : function(relX, relY){
-		this.shape.x = (this.absX - this.sizeX/2) * this.scale + relX;
-		this.shape.y = (this.absY - this.sizeY/2) * this.scale + relY;
+		this.shape.x = (this.absX) * this.scale + relX;
+		this.shape.y = (this.absY) * this.scale + relY;
+		//行先表示も移動
+		for(var i=0; i<this.destText.length; i++){
+			this.destText[i].x = this.destText[i].absX * this.scale + relX;
+			this.destText[i].y = this.destText[i].absY * this.scale + relY;
+		}
 	},
 	putToStage : function(){
 		this.stage.addChild(this.shape);
+		for(var i=0; i<this.destText.length; i++){
+			this.stage.addChild(this.destText[i])
+		}
 		this.onStage = true;
 	},
 	removeFromStage : function(){
 		this.stage.removeChild(this.shape);
+		for(var i=0; i<this.destText.length; i++){
+			this.stage.removeChild(this.destText[i])
+		}
 		this.onStage = false;
 	},
 	//始発駅
@@ -289,4 +317,29 @@ TNTrain.prototype = {
 	endTime : function(){
 		return this.routes[this.routes.length-1].endTime;
 	},
+	start : function(){
+		var gr = this.shape.graphics;
+		gr.clear();
+		gr.beginFill(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
+		this.shape.cache(-this.size*2, -this.size*2, this.size*8, this.size*8);
+		this.started = true;
+	},
+	end : function(){
+		var gr = this.shape.graphics;
+		gr.clear();
+		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
+		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size/2);
+		this.shape.updateCache();
+		this.started = true;
+	},
+	getDestStr : function(){
+		if(this.terminal) return this.terminal;
+		var train = this;
+		while(train.nextTrain)
+		{
+			train = train.nextTrain;
+
+		}
+		return train.routes[train.routes.length-1].endStation.stationName;
+	}
 }
