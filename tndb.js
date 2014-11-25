@@ -39,7 +39,7 @@ var TNDb = (function(){
 	}
 
 	//DBからfromTime～toTimeの列車をゲット、文字列の配列を返す、callbackをコールする
-	function readTrainsFromDB(fromTime, toTime, trains, callback)
+	function readTrainsFromDB(fromTime, toTime, service, trains, callback)
 	{
 		var fromTimeStr = ToStringTime(fromTime);
 		var toTimeStr = ToStringTime(toTime);
@@ -49,7 +49,7 @@ var TNDb = (function(){
 			async: true,
 			type: "POST",
 			url: "tnajax_train.php",
-			data: { Lines : validLines, FromTime : fromTimeStr, ToTime : toTimeStr, LoadedTrains : tlJSON }
+			data: { Lines : validLines, FromTime : fromTimeStr, ToTime : toTimeStr, Service : service, LoadedTrains : tlJSON }
 		}).done(function( msg ) {
 			var retStr = msg.split("\n");
 			dbBuffer['train'] = retStr;
@@ -93,7 +93,7 @@ var TNDb = (function(){
 		});
 	}
 
-	function readLinesFromPackage(fromTime, toTime, trains, callback)
+	function readLinesFromPackage(fromTime, toTime, service, trains, callback)
 	{
 
 	}
@@ -126,10 +126,10 @@ var TNDb = (function(){
 			else readLinesFromPackage();
 		},
 		//列車の読み込み
-		readTrains : function(fromTime, toTime, trains, callback)
+		readTrains : function(fromTime, toTime, service, trains, callback)
 		{
-			if(packageFile == "") readTrainsFromDB(fromTime, toTime, trains, callback);
-			else readTrainsFromPackage(fromTime, toTime, trains, callback);
+			if(packageFile == "") readTrainsFromDB(fromTime, toTime,service,  trains, callback);
+			else readTrainsFromPackage(fromTime, toTime, service, trains, callback);
 		},
 		//あるセクションのデータゲット
 		getSectionData : function(sectionName)

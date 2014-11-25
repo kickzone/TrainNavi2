@@ -34,8 +34,12 @@ var TNView = (function(cj){
 	//列車を何ピクセル分線路から離すか
 	var tdist = 10;
 
+	//駅名表示するかどうか
+	var destView;
+
 	//スキンファイル
 	var skinFile = null;
+
 
 	//緯度経度で初期化
 	function InitLatLon(){
@@ -208,7 +212,7 @@ var TNView = (function(cj){
 	//public
 	return{
 		//初期化
-		init: function(){
+		init: function(option){
 			//必要なオブジェクトをゲットするなど
 			Model = TNModel;
 			lines = Model.getLines();
@@ -216,6 +220,7 @@ var TNView = (function(cj){
 			stage.removeAllChildren();
 			width = $("canvas")[0].width;
 			height = $("canvas")[0].height;
+			this.destView = option.dest;
 			if(skinFile){
 
 			}else{
@@ -232,7 +237,8 @@ var TNView = (function(cj){
 		},
 		//x-yに掛ける係数
 		coefXY: coefXY,
-		tdist: tdist
+		tdist: tdist,
+		destView : destView
 	};
 
 })(createjs);

@@ -2,7 +2,7 @@
 require 'funcs.php';
 require_once 'simple_html_dom.php';
 
-function ImportTimeTableAll($folder)
+function ImportTimeTableAll($folder, $lineName)
 {
 	//30分間待ってやる
 	set_time_limit (1800);
@@ -17,12 +17,12 @@ function ImportTimeTableAll($folder)
 
 	foreach ($iterator as $fileinfo) { // $fileinfoはSplFiIeInfoオブジェクト
 		if ($fileinfo->isFile() && $fileinfo->getExtension() == "htm") {
-			ImportTimeTable($fileinfo->getRealPath(), $csvTrain, $csvRoute);
+			ImportTimeTable($fileinfo->getRealPath(), $csvTrain, $csvRoute, $lineName);
 		}
 	}
 }
 
-function ImportTimeTable($fileName, $csvTrain, $csvRoute)
+function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 {
 	$dom = file_get_html($fileName);
 
@@ -265,6 +265,18 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute)
 		}
 		print_r($currentStation);
 		echo '<BR>';
+	}
+
+	//2014/11/25 $lineName指定がある場合、指定された路線のデータだけ保存
+	if($lineName){
+		$tmpTrains = array();
+		foreach($trains as $train)
+		{
+			if($train->lineName == $lineName){
+				$tmpTrains[] = $train;
+			}
+		}
+		$trains = $tmpTrains;
 	}
 
 	foreach($trains as $train)

@@ -52,10 +52,22 @@ var TNFuncs = (function(){
 		return normalVec;
 	}
 
+	function getDestStr(str){
+		if(TNView.destView == 2){
+			//省略駅名
+			if(str == "新松田")	return '松';
+			if(str == "相武台前") return '武';
+			return str.charAt(0);
+		}
+		return str;
+	}
+
 	//public
 	return{
 		calcBisectUnitVector: calcBisectUnitVector,
-		calcNormalUnitVector: calcNormalUnitVector
+		calcNormalUnitVector: calcNormalUnitVector,
+		getDestStr : getDestStr
 	};
+
 
 })();

@@ -26,7 +26,7 @@ if (isset($_POST["dl"])) {
 }
 else if (isset($_POST["make"])) {
 	echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
-	ImportTimeTableAll($_POST["folder"]);
+	ImportTimeTableAll($_POST["folder"], $_POST["lineName"]);
 	//テキストボックスの値をそのままにする
 	$tbFolder = $_POST["folder"];
 	$tbURL = $_POST["url"];
@@ -40,6 +40,27 @@ else if (isset($_POST["singleFile"])) {
 	$tbURL = $_POST["url"];
 	$tbTest = $_POST['file'];
 
+}
+
+
+//路線一覧のHTMLを出力する
+function MakeListBox()
+{
+
+	$mysqli = OpenDb();
+	$query = "SELECT * FROM tnline";
+	$result = ExecQuery($mysqli, $query);
+
+	$retStr = "<select name=\"lineName\" size=\"5\">";
+	while ($row = $result->fetch_assoc()) {
+		$retStr .= "<option ";
+		$retStr .= "value=\"" . $row["linename"] . "\">". $row["linename"]."</option>";
+	}
+	$retStr .= "</select>";
+
+	$mysqli->close();
+
+	return $retStr;
 }
 
 ?>
@@ -61,6 +82,10 @@ else if (isset($_POST["singleFile"])) {
   URL:<input type="text" id="url" name="url" value="<?php echo $tbURL; ?>" /><BR>
   <input type="submit" id="dl" name="dl" value="ダウンロード開始"><BR>
   <BR>
+
+  <P>エクスポートする路線</P>
+  <div><?php echo MakeListBox() ?></div>
+
   <P>時刻表csvを作成</P>
   <input type="submit" id="make" name="make" value="csv作成開始"><BR>
   <BR>

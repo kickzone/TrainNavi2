@@ -108,6 +108,11 @@ TNStation.prototype = {
 			else if(!train.isNobori && this.pKudari) p = this.pKudari;
 			else
 			{
+				if(railPrev == null)
+				{
+					var test = 0;
+					test = 1;
+				}
 				var p1 = railPrev.secondLastPoint(train.isNobori);
 				var p2 = {x: this.absX, y:this.absY};
 				p = TNFuncs.calcBisectUnitVector(

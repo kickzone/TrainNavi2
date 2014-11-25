@@ -107,7 +107,7 @@ function ExportPackage($fileName, $lines, $options)
 
 //列車1台分1行のテキストを得る
 //この関数は他でも使いまわします
-function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub)
+function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub, $service)
 {
 	$trainkindname = "";
 	if(array_key_exists($row['trainkind'], $trainKindListSub))
@@ -147,7 +147,7 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 	}
 	$ret = $row['trainname'].",".$row['service'].",$trainkind,$trainkindname,$nextline,$nexttrain,$terminal";
 	//列車名を使ってサブクエリを作成
-	$query2 = "SELECT *, DATE_FORMAT(starttime, '%k:%i') AS start, DATE_FORMAT(endtime, '%k:%i') AS end FROM tnroute WHERE linename='".$row['linename']."' AND trainname='".$row['trainname']."'";
+	$query2 = "SELECT *, DATE_FORMAT(starttime, '%k:%i') AS start, DATE_FORMAT(endtime, '%k:%i') AS end FROM tnroute WHERE linename='".$row['linename']."' AND trainname='".$row['trainname']."' AND service=$service";
 	$result2 = ExecQuery($mysqli, $query2);
 	$startStationIDBefore = 0;
 	$endStationIDBefore = 0;

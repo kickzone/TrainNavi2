@@ -17,6 +17,8 @@ var TNModel = (function(){
 	var fps = 10;
 	//倍速
 	var speed = 1;
+	//平日休日
+	var service = 1;
 
 	//startをコールしたPC時間を保存、これを基準にしてあらゆる処理を行う
 	var stdTime;
@@ -29,6 +31,7 @@ var TNModel = (function(){
 	var reloadSec = 60;
 
 	var onInit = true;
+
 
 	//路線、駅などの静的オブジェクト読み込み
 	function readLines(aStrLines)
@@ -129,7 +132,7 @@ var TNModel = (function(){
 		var spanDBTime = dbReadTime - currentTime;
 		if(spanDBTime < reloadSec * 1000 * speed){
 			dbToReadTime = new Date(dbReadTime.getTime() + reloadSec * 1000 * speed * 2)
-			DB.readTrains(dbReadTime, dbToReadTime, trains, AddTrains);
+			DB.readTrains(dbReadTime, dbToReadTime, service, trains, AddTrains);
 			dbReadTime = dbToReadTime;
 		}
 		$("#status").text(currentTime.toTimeString());
@@ -191,7 +194,7 @@ var TNModel = (function(){
 	//public
 	return{
 		//初期化
-		init : function(aStrLines, in_startTime, in_speed, in_fps)
+		init : function(aStrLines, option)
 		{
 			$("#status").text("路線情報読み込み中...");
 			lines = [];
@@ -199,9 +202,10 @@ var TNModel = (function(){
 			DB = TNDb;
 			View = TNView;
 			makeLines(aStrLines);
-			speed = in_speed;
-			fps = in_fps;
-			startTime = in_startTime;
+			speed = option.speed;
+			fps = option.fps;
+			startTime = option.startTime;
+			service = option.service;
 		},
 		getLines : function(){
 			return lines;
@@ -221,7 +225,7 @@ var TNModel = (function(){
 		start : function(){
 			//開始時の列車情報読み込み
 			dbReadTime = new Date(startTime.getTime() + reloadSec * 1000 * speed * 2)
-			DB.readTrains(startTime, dbReadTime, trains, AddTrains);
+			DB.readTrains(startTime, dbReadTime, service, trains, AddTrains);
 			//読み込み処理が終わるまで待つ
 			var wait = setInterval(function() {
 			    if (!onInit) {

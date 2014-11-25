@@ -75,12 +75,12 @@ for($i=0; $i<count($lines); $i++)
 	if($_POST['FromTime'] > $_POST['ToTime'])
 	{
 		#日をまたぐ場合
-		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' and (starttime>=\"".$_POST['FromTime']."\" OR starttime<=\"".$_POST['ToTime']."\")";
+		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' AND (starttime>=\"".$_POST['FromTime']."\" OR starttime<=\"".$_POST['ToTime']."\") AND service=".$_POST['Service'];
 	}
 	else
 	{
 		#通常
-		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' and starttime>=\"".$_POST['FromTime']."\" and starttime<=\"".$_POST['ToTime']."\"";
+		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' AND starttime>=\"".$_POST['FromTime']."\" and starttime<=\"".$_POST['ToTime']."\" AND service=".$_POST['Service'];
 	}
 	$result = ExecQuery($mysqli, $query);
 	if($result->num_rows > 0)
@@ -125,7 +125,7 @@ for($i=0; $i<count($lines); $i++)
 						$toLoadTrainListSub2[] = $nexttrain;
 						$toLoadTrainList[$k] = $toLoadTrainListSub2;
 						//さらに直通先があれば追加
-						$query = "SELECT * FROM tntrain WHERE linename='$nextline' AND trainname='$nexttrain'";
+						$query = "SELECT * FROM tntrain WHERE linename='$nextline' AND trainname='$nexttrain' AND service=".$_POST['Service'];
 						$result2 = ExecQuery($mysqli, $query);
 						if($result2->num_rows > 0)
 						{
@@ -165,7 +165,7 @@ for($i=0; $i<count($lines); $i++)
 	$result = ExecQuery($mysqli, $query);
 	while($row = $result->fetch_assoc())
 	{
-		$ret .= MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub);
+		$ret .= MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub, $_POST['Service']);
 		$ret .= "\n";
 	}
 }
@@ -174,7 +174,7 @@ echo $ret;
 
 function MakeTrainsSQL($linename, $toLoadTrainListSub)
 {
-	$query = "SELECT * FROM tntrain WHERE linename='$linename' AND (";
+	$query = "SELECT * FROM tntrain WHERE linename='$linename' AND service=".$_POST['Service']. " AND (";
 	for($j=0; $j<count($toLoadTrainListSub); $j++)
 	{
 		if($j > 0) $query .= " OR ";

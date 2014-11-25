@@ -145,13 +145,15 @@ TNTrain.prototype = {
 		sha.alpha = 0.7;
 		var textSize = this.size * 1.5;
 		//行先の文字列オブジェクトを作成
-		var destStr = this.getDestStr();
-		for(var i=0; i<destStr.length; i++){
-			var shaDest = new cj.Text(destStr.charAt(i), textSize.toString(10) + "px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
-			shaDest.alpha = 0.7;
-			this.destText.push(shaDest);
-			this.destTextWidth.push(shaDest.getMeasuredWidth());
-			this.destTextHeight.push(shaDest.getMeasuredHeight());
+		if(TNView.destView == 1 || TNView.destView == 2){
+			var destStr = this.getDestStr();
+			for(var i=0; i<destStr.length; i++){
+				var shaDest = new cj.Text(destStr.charAt(i), textSize.toString(10) + "px ＭＳ Ｐゴシック", this.trainKind.trainKindColor);
+				shaDest.alpha = 0.7;
+				this.destText.push(shaDest);
+				this.destTextWidth.push(shaDest.getMeasuredWidth());
+				this.destTextHeight.push(shaDest.getMeasuredHeight());
+			}
 		}
 	},
 	setTime : function(time){
@@ -333,13 +335,13 @@ TNTrain.prototype = {
 		this.started = true;
 	},
 	getDestStr : function(){
-		if(this.terminal) return this.terminal;
+		if(this.terminal) return TNFuncs.getDestStr(this.terminal);
 		var train = this;
 		while(train.nextTrain)
 		{
 			train = train.nextTrain;
 
 		}
-		return train.routes[train.routes.length-1].endStation.stationName;
+		return TNFuncs.getDestStr(train.routes[train.routes.length-1].endStation.stationName);
 	}
 }

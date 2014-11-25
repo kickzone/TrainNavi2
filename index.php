@@ -48,13 +48,24 @@ canvas {  }
 </head>
 <body>
 <div><?php echo MakeListBox() ?></div>
-<input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<br>
-<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps<br>
+<input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
+<br>
+<input type="radio" id="weekday" name="service" value="1" checked>平日
+<input type="radio" id="holiday" name="service" value="2">休日
+<BR>
+<input type="radio" id="destFull" name="dest" value="1" checked>行先表示フル
+<input type="radio" id="destAbbr" name="dest" value="2">行先省略表示
+<input type="radio" id="destNone" name="dest" value="3">行先表示しない
+<BR>
 <input type="button" value="Start!" onclick="Start()"/><span id="status"></span><br />
 <div id="wrapper">
 <canvas width="1600px" height="900px" >
 </canvas>
 </div>
+<P>履歴</P>
+<P>2014/11/25 平日/休日ダイヤの切り替え、行先表示の省略・表示なし機能を追加、休日ダイヤを含めたDB拡充</P>
+<P>2014/11/24 行先表示に対応</P>
+<P>2014/11/23 初版</P>
 <script src="tnfuncs.js"></script>
 <script src="tnmodel.js"></script>
 <script src="tnview.js"></script>
@@ -79,8 +90,17 @@ function Start()
 	startTime.setMinutes(parseInt(startMinute));
 	startTime.setSeconds(0);
 	startTime.setMilliseconds(0);
-	TNModel.init(lst, startTime, parseInt(speed), parseInt(fps));
-	TNView.init();
+	var option = {
+		startTime : startTime,
+		speed : parseInt(speed),
+		fps : parseInt(fps),
+		service : parseInt($("input[name='service']:checked").val()),
+	};
+	TNModel.init(lst, option);
+	option = {
+		dest : parseInt($("input[name='dest']:checked").val())
+	};
+	TNView.init(option);
 	TNModel.start();
 }
 </script>
