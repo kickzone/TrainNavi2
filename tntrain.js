@@ -185,6 +185,10 @@ TNTrain.prototype = {
 					for(var point = this.routes[i].startStation; point != this.routes[i].endStation; point = point.getNextPoint(this.isNobori))
 					{
 						var rail = point.getNextRail(this.isNobori);
+						if(!rail){
+							var test = 0;
+							test = 1;
+						}
 						if(rail.start.kilo <= this.kilo && this.kilo <= rail.end.kilo){
 							this.onObject = rail;
 							break;

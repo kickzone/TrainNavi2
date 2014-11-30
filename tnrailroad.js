@@ -19,7 +19,7 @@ var TNRailroad = function(line, start, end){
 
 	//サイズ(直線の方向)
 	this.sizeX = 0;
-	this,sizeY = 0;
+	this.sizeY = 0;
 }
 
 TNRailroad.prototype = {
@@ -42,7 +42,7 @@ TNRailroad.prototype = {
 			gr.setStrokeStyle(3).beginStroke(this.line.lineColor).moveTo(0, 0).lineTo(x, y).endStroke();
 		}
 		this.sizeX = x;
-		this,sizeY = y;
+		this.sizeY = y;
 		this.absX = this.start.absX;
 		this.absY = this.start.absY;
 		var sha = new cj.Shape(gr);
@@ -144,11 +144,12 @@ TNRailroad.prototype = {
 	},
 
 	inCanvas : function(){
+		var xmin = this.sizeX >= 0? this.shape.x : this.shape.x + this.sizeX;
+		var xmax = this.sizeX >= 0? this.shape.x + this.sizeX : this.shape.x;
+		var ymin = this.sizeY >= 0? this.shape.y : this.shape.y + this.sizeY;
+		var ymax = this.sizeY >= 0? this.shape.y + this.sizeY : this.shape.y;
 		return TNFuncs.isRectOverlapped(
-				this.shape.x,
-				this.shape.y,
-				this.shape.x + this.sizeX,
-				this.shape.y + this.sizeY,
+				xmin, ymin, xmax, ymax,
 				0, 0, TNView.width, TNView.height
 		);
 	}
