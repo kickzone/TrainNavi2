@@ -286,6 +286,7 @@ TNTrain.prototype = {
 		}
 	},
 	putToStage : function(){
+		if(!this.shape) return;
 		this.stage.addChild(this.shape);
 		for(var i=0; i<this.destText.length; i++){
 			this.stage.addChild(this.destText[i])
@@ -293,6 +294,7 @@ TNTrain.prototype = {
 		this.onStage = true;
 	},
 	removeFromStage : function(){
+		if(!this.shape) return;
 		this.stage.removeChild(this.shape);
 		for(var i=0; i<this.destText.length; i++){
 			this.stage.removeChild(this.destText[i])
@@ -320,19 +322,21 @@ TNTrain.prototype = {
 		return this.routes[this.routes.length-1].endTime;
 	},
 	start : function(){
+		this.started = true;
+		if(!this.shape) return;
 		var gr = this.shape.graphics;
 		gr.clear();
 		gr.beginFill(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		this.shape.cache(-this.size*2, -this.size*2, this.size*8, this.size*8);
-		this.started = true;
 	},
 	end : function(){
+		this.ended = true;
+		if(!this.shape) return;
 		var gr = this.shape.graphics;
 		gr.clear();
 		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size/2);
-		this.shape.updateCache();
-		this.started = true;
+		if(this.started) this.shape.updateCache();
 	},
 	getDestStr : function(){
 		if(this.terminal) return TNFuncs.getDestStr(this.terminal);

@@ -109,6 +109,16 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 	echo $currentLine, ' からはじまる<BR>';
 	$currentTrain->lineName = $currentLine;
 	ModifyTrainKind($currentTrain->trainKind, $currentLine);
+	if($trainRangeKind != null)
+	{
+		$trainRangeKind[0] = ModifyStationName($trainRangeKind[0], $currentLine);
+		$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
+	}
+	if($trainRangeName != null)
+	{
+		$trainRangeName[0] = ModifyStationName($trainRangeName[0], $currentLine);
+		$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
+	}
 
 	//経路情報をゲットしていく
 	$route = new Route();
@@ -116,7 +126,7 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 	{
 		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$currentStation = SplitItem($station->plaintext);
-		ModifyStationName($currentStation, $currentTrain->lineName);
+		$currentStation[0] = ModifyStationName($currentStation[0], $currentTrain->lineName);
 		$stationName = $currentStation[0];
 
 		if($beforeStation != null)
@@ -131,8 +141,18 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 			$bLineChanged = false;
 			$kindChanged = false;
 			$nameChanged = false;
-			if($trainRangeKind != null && $beforeStationName == $trainRangeKind[1]) $kindChanged = true;
-			if($trainRangeName != null && $beforeStationName == $trainRangeName[1]) $nameChanged = true;
+			if($trainRangeKind != null)
+			{
+				$trainRangeKind[0] = ModifyStationName($trainRangeKind[0], $currentLine);
+				$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
+				if($beforeStationName == $trainRangeKind[1]) $kindChanged = true;
+			}
+			if($trainRangeName != null)
+			{
+				$trainRangeName[0] = ModifyStationName($trainRangeName[0], $currentLine);
+				$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
+				if($beforeStationName == $trainRangeName[1]) $nameChanged = true;
+			}
 			if($result->num_rows==0)
 			{
 				//路線が変わった
@@ -221,7 +241,7 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 					$nameCount++;
 					echo "列車番号が変わった : " . $aTrainNames[$nameCount*2+1] . "<BR>";
 					$newTrain->trainName = $aTrainNames[$nameCount*2+1];
-					$trainRangeKind = TrainRange($aTrainKinds[$nameCount*2]);
+					$trainRangeName = TrainRange($aTrainNames[$nameCount*2]);
 				}
 				else
 				{
@@ -349,9 +369,9 @@ function SelectLine($stationName, $dom, $mysqli)
 		if($stationName == $currentStation[0]) $start = true;
 		if($start)
 		{
-			ModifyStationName($currentStation, "");
+			$currentStation[0] = ModifyStationName($currentStation[0], "");
 			$currentStationName = $currentStation[0];
-			$query = "SELECT linename FROM tnstation WHERE stationname='$currentStationName'";
+			$query = "SELECT linename FROM tnstation WHERE stationname like '%$currentStationName'";
 			$result = ExecQuery($mysqli, $query);
 			if($result->num_rows==1)
 			{
@@ -418,7 +438,7 @@ function SearchTime($currentStation, $suffix)
 }
 
 //駅名の間違いを修正
-function ModifyStationName(&$currentStation, $lineName)
+function ModifyStationName($currentStation, $lineName)
 {
 	$modifyList = array();
 	switch($lineName)
@@ -434,16 +454,29 @@ function ModifyStationName(&$currentStation, $lineName)
 					"壓c" => "螢田" //何故か文字化けしている
 			);
 			break;
+		//便宜的に修正
+		case "京王新線":
+			$modifyList = array(
+				"新宿" => "新線新宿",
+				);
+			break;
+		case "都営地下鉄新宿線":
+			$modifyList = array(
+				"新宿" => "新線新宿",
+				);
+			break;
 		case "":
 			$modifyList = array(
 					"壓c" => "螢田" //何故か文字化けしている
 			);
+			break;
 	}
 
-	if(array_key_exists($currentStation[0], $modifyList))
+	if(array_key_exists($currentStation, $modifyList))
 	{
-		$currentStation[0] = $modifyList[$currentStation[0]];
+		return $modifyList[$currentStation];
 	}
+	return $currentStation;
 }
 
 //あさぎりなどの駅名と路線名の不一致を訂正する
@@ -471,15 +504,11 @@ function ModifyAsagiri(&$stationName, $lineName)
 
 function ModifyTrainKind(&$kind, $lineName)
 {
-	$modifyList = array();
-	switch($lineName)
-	{
-		case "小田急小田原線":
-			$modifyList = array(
-					"私鉄無料急行" => "急行"
-			);
-			break;
-	}
+	$modifyList = array(
+		"私鉄無料急行" => "急行",
+		"私鉄無料特急" => "特急"
+	);
+
 
 	if(array_key_exists($kind, $modifyList))
 	{
@@ -497,8 +526,8 @@ function CalcPassageTime($mysqli, $beforeLine, $beforeStation, $beforeTime, $pas
 	{
 		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$currentStation = SplitItem($station->plaintext);
-		if($bExistBeforeStation) ModifyStationName($currentStation, $afterLine);
-		else ModifyStationName($currentStation, $beforeLine);
+		if($bExistBeforeStation) ModifyStationName($currentStation[0], $afterLine);
+		else ModifyStationName($currentStation[0], $beforeLine);
 		$stationName = $currentStation[0];
 		if($stationName == $beforeStation)
 		{

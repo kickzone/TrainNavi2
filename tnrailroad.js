@@ -16,12 +16,21 @@ var TNRailroad = function(line, start, end){
 	this.cj = null;
 	this.stage = null;
 	this.shape = null;
+
+	//サイズ(直線の方向)
+	this.sizeX = 0;
+	this,sizeY = 0;
 }
 
 TNRailroad.prototype = {
 	makeObject : function(cj, stage, x, y){
-		this.cj = cj;
-		this.stage = stage;
+		if(this.shape){
+			stage.removeChild(this.shape);
+			this.shape = null;
+		} else {
+			this.stage = stage;
+			this.cj = cj;
+		}
 		var gr = new cj.Graphics();
 		//ベジエの場合 未実装
 		if(this.bezire){
@@ -32,6 +41,8 @@ TNRailroad.prototype = {
 			//路線を描画
 			gr.setStrokeStyle(3).beginStroke(this.line.lineColor).moveTo(0, 0).lineTo(x, y).endStroke();
 		}
+		this.sizeX = x;
+		this,sizeY = y;
 		this.absX = this.start.absX;
 		this.absY = this.start.absY;
 		var sha = new cj.Shape(gr);
@@ -118,5 +129,27 @@ TNRailroad.prototype = {
 	moveObject : function(relX, relY){
 		this.shape.x = this.absX * this.scale + relX;
 		this.shape.y = this.absY * this.scale + relY;
+		//shapeが画面上から消える場合はstageから消す
+		if(this.onStage){
+			if(!this.inCanvas()){
+				this.stage.removeChild(this.shape);
+				this.onStage = false;
+			}
+		} else{
+			if(this.inCanvas()){
+				this.stage.addChild(this.shape);
+				this.onStage = true;
+			}
+		}
+	},
+
+	inCanvas : function(){
+		return TNFuncs.isRectOverlapped(
+				this.shape.x,
+				this.shape.y,
+				this.shape.x + this.sizeX,
+				this.shape.y + this.sizeY,
+				0, 0, TNView.width, TNView.height
+		);
 	}
 }

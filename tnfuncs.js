@@ -52,21 +52,61 @@ var TNFuncs = (function(){
 		return normalVec;
 	}
 
+	//緯度、経度1度当たり何ピクセルになるのか、の係数を得る
+	//参考：http://www.nanchatte.com/map/circle.html
+	function calcCoefXY(lat, scale){
+		//ラジアンの角度
+		var latRadian = lat * Math.PI / 180;
+
+		// 赤道半径(m) (WGS-84)
+		var EquatorialRadius = 6378137;
+
+		// 扁平率の逆数 : 1/f (WGS-84)
+		var F = 298.257223;
+
+		// 離心率の２乗
+		var E = ((2 * F) -1) / Math.pow(F, 2);
+
+		// 赤道半径 × π
+		var PI_ER = Math.PI * EquatorialRadius;
+
+		// 1 - e^2 sin^2 (θ)
+		var TMP = 1 - E * Math.pow(Math.sin(latRadian), 2);
+
+		// 経度１度あたりの長さ(m)
+		var arc_lat = (PI_ER * (1 - E)) / (180 * Math.pow(TMP, 3/2));
+
+		// 緯度１度あたりの長さ(m)
+		var arc_lng = (PI_ER * Math.cos(latRadian)) / (180 * Math.pow(TMP, 1/2));
+
+		return {X : arc_lat / scale, Y : arc_lng / scale};
+	}
+
+	//省略名称を得る
 	function getDestStr(str){
 		if(TNView.destView == 2){
 			//省略駅名
 			if(str == "新松田")	return '松';
 			if(str == "相武台前") return '武';
+			if(str == "京王八王子") return "八";
+			if(str == "京王多摩センター") return "多";
 			return str.charAt(0);
 		}
 		return str;
+	}
+
+	//矩形が重なるかどうか
+	function isRectOverlapped(xmin1, ymin1, xmax1, ymax1, xmin2, ymin2, xmax2, ymax2){
+		return !(xmin1 > xmax2 || ymin1 > ymax2 || xmax1 < xmin2 || ymax1 < ymin2)
 	}
 
 	//public
 	return{
 		calcBisectUnitVector: calcBisectUnitVector,
 		calcNormalUnitVector: calcNormalUnitVector,
-		getDestStr : getDestStr
+		getDestStr : getDestStr,
+		calcCoefXY : calcCoefXY,
+		isRectOverlapped : isRectOverlapped
 	};
 
 

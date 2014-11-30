@@ -14,6 +14,9 @@ var TNStation = function(line, text){
 	this.absY = 0;
 	this.scale = 1.0;
 
+	//大きさ
+	this.size = 10;
+
 	//オブジェクトの参照
 	this.prevRail = null;
 	this.nextRail = null;
@@ -25,6 +28,9 @@ var TNStation = function(line, text){
 	this.stage = null;
 	this.shape = null;
 
+	//現在stageに登録中かどうか
+	this.onStage = false;
+
 	//キャッシュしてみる
 	this.pNobori = null;
 	this.pKudari = null;
@@ -32,16 +38,25 @@ var TNStation = function(line, text){
 
 TNStation.prototype = {
 	makeObject : function(cj, stage, absX, absY){
-		this.stage = stage;
-		this.cj = cj;
+		if(this.shape){
+			stage.removeChild(this.shape);
+			this.shape = null;
+		} else {
+			this.stage = stage;
+			this.cj = cj;
+		}
 		var sha = new cj.Shape()
 		this.shape = sha;
 		sha.alpha = 0.8;
 		var gr = sha.graphics;
 		//描画
-		gr.beginStroke(this.line.lineColor).beginFill(this.line.lineColor).drawRect(-5, -5, 10, 10, 1);
+		gr.beginStroke(this.line.lineColor).beginFill(this.line.lineColor).drawRect(-this.size/2, -this.size/2, this.size, this.size, 1);
 		//stageに追加
-		stage.addChild(sha);
+		//2014/11/30 画面上にある場合のみ
+		if(this.inCanvas()){
+			stage.addChild(sha);
+			this.onStage = true;
+		}
 
 		this.absX = absX;
 		this.absY = absY;
@@ -135,15 +150,30 @@ TNStation.prototype = {
 	getNextPoint : function(isNobori){
 		return isNobori? this.prevPoint : this.nextPoint;
 	},
-	//倍率設定
-	setScale : function(scale){
-		this.scale = scale;
-		this.shape.scaleX = scale;
-		this.shape.scaleY = scale;
-	},
 	//オブジェクト移動 スクロール時など
 	moveObject : function(relX, relY){
 		this.shape.x = this.absX * this.scale + relX;
 		this.shape.y = this.absY * this.scale + relY;
+		//shapeが画面上から消える場合はstageから消す
+		if(this.onStage){
+			if(!this.inCanvas()){
+				this.stage.removeChild(this.shape);
+				this.onStage = false;
+			}
+		} else{
+			if(this.inCanvas()){
+				this.stage.addChild(this.shape);
+				this.onStage = true;
+			}
+		}
+	},
+	inCanvas : function(){
+		return TNFuncs.isRectOverlapped(
+				this.shape.x - this.size/2,
+				this.shape.y - this.size/2,
+				this.shape.x + this.size/2,
+				this.shape.y + this.size/2,
+				0, 0, TNView.width, TNView.height
+		);
 	}
 }

@@ -6,6 +6,9 @@ var TNView = (function(cj){
 	//stage
 	var stage;
 
+	//canvas
+	var canvas;
+
 	//路線オブジェクト TNModelと共有する
 	var lines;
 
@@ -13,11 +16,13 @@ var TNView = (function(cj){
 	var Model;
 
 	//基準値 左上の点 山梨県上野原市棡原
-	var latitude_base_lu = 35.687787;
-	var longitude_base_lu = 139.099490;
+	//var latitude_base_lu = 35.687787;
+	//var longitude_base_lu = 139.099490;
 	//基準値 右下の点 神奈川県横須賀市浦賀５
-	var latitude_base_rd = 35.247455;
-	var longitude_base_rd = 139.709413
+	//var latitude_base_rd = 35.247455;
+	//var longitude_base_rd = 139.709413
+
+	var latitude_base, longitude_base;
 
 	//canvasの幅と高さ
 	var width, height;
@@ -26,10 +31,11 @@ var TNView = (function(cj){
 	var relX = 0, relY = 0;
 
 	//現在の倍率
-	var scale = 1.0;
+	var scale = 16.0;
 
 	//各オブジェクト北緯・東経からx-y座標を求める際に掛ける係数
-	var coefXY;
+	//var coefXY;
+	var coef;
 
 	//列車を何ピクセル分線路から離すか
 	var tdist = 10;
@@ -42,7 +48,7 @@ var TNView = (function(cj){
 
 
 	//緯度経度で初期化
-	function InitLatLon(){
+	/*function InitLatLon(){
 		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
 		var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
 		$.each(lines, function(i, line){
@@ -69,6 +75,34 @@ var TNView = (function(cj){
 		longitude_base_lu = minLon;
 		latitude_base_rd = minLat;
 		longitude_base_rd = maxLon;
+	}*/
+
+	function InitLatLon(){
+		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
+		var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
+		$.each(lines, function(i, line){
+			$.each(line.getSortedPoints(), function(j, point){
+				if(minLat > point.latitude) minLat = point.latitude;
+				if(maxLat < point.latitude) maxLat = point.latitude;
+				if(minLon > point.longitude) minLon = point.longitude;
+				if(maxLon < point.longitude) maxLon = point.longitude;
+			});
+		});
+
+		//中心点を基準とする
+		latitude_base = (minLat + maxLat) / 2;
+		longitude_base = (minLon + maxLon) / 2;
+
+		//XY係数を算出
+		//すべての駅が収まるsizeにする
+		var scaleTry, coefTry;
+		for(scaleTry = 1; scaleTry < 1024; scaleTry *= 2){
+			coefTry = TNFuncs.calcCoefXY(latitude_base, scaleTry);
+			if((maxLat - minLat) * coefTry.X <= width
+				&& (maxLon - minLon) * coefTry.Y <= height) break;
+		}
+		scale = scaleTry;
+		coef = coefTry;
 	}
 
 	//線路のオブジェクトを作成
@@ -80,8 +114,8 @@ var TNView = (function(cj){
 
 				}else{
 					//緯度経度からの計算
-					var absX = (station.longitude - longitude_base_lu) * coefXY;
-					var absY = (latitude_base_lu - station.latitude) * coefXY;
+					var absX = (station.longitude - longitude_base) * coef.X + (width/2);
+					var absY = (latitude_base - station.latitude) * coef.Y + (height/2);
 					station.makeObject(cj, stage, absX, absY);
 				}
 			});
@@ -90,8 +124,8 @@ var TNView = (function(cj){
 
 				}else{
 					//緯度経度からの計算
-					var x = (railroad.end.longitude - railroad.start.longitude) * coefXY;
-					var y = (railroad.start.latitude - railroad.end.latitude) * coefXY;
+					var x = (railroad.end.longitude - railroad.start.longitude) * coef.X;
+					var y = (railroad.start.latitude - railroad.end.latitude) * coef.Y;
 					railroad.makeObject(cj, stage, x, y);
 				}
 			});
@@ -112,16 +146,13 @@ var TNView = (function(cj){
 	}
 
 	//倍率変更
-	function SetScale(){
-		$.each(lines, function(i, line){
-			var beforePoint = null;
-			$.each(line.stations, function(j, station){
-				station.setScale(scale);
-			});
-			$.each(line.railroads, function(j, railroad){
-				railroad.setScale(scale);
-			});
-		});
+	function SetScale(toScale){
+		relX *= (scale / toScale);
+		relY *= (scale / toScale);
+		scale = toScale;
+		coef = TNFuncs.calcCoefXY(latitude_base, scale);
+		DrawLines();
+		MoveObjects();
 	}
 
 	//列車を描画
@@ -133,65 +164,86 @@ var TNView = (function(cj){
 		var currentTimePlus1Min = new Date(currentTime.getTime() + 60 * 1000);
 		$.each(trains, function(i, train){
 			if(train.onObject){
-				if(!train.shape){
-					train.makeObject(cj, stage);
-				}
-				if(!train.onStage && !train.ended){
-					//rail上に乗ってない場合
-					//開始1分前ならstageに乗せる
-					//ただし、直通列車はギリギリで載せる
-					if(train.prevTrain){
-						if(train.prevTrain.endTime() <= currentTime && currentTime < train.endTime()){
+				if(train.onObject.onStage){
+					if(!train.shape){
+						train.makeObject(cj, stage);
+					}
+					if(!train.started){
+						//rail上に乗ってない場合
+						//開始1分前ならstageに乗せる
+						//ただし、直通列車はギリギリで載せる
+						if(train.prevTrain){
+							if(train.prevTrain.endTime() <= currentTime && currentTime < train.endTime()){
+								//位置を更新
+								train.onObject.setXY(train);
+								train.moveObject(relX, relY);
+								train.start();
+								train.putToStage();
+							}
+						}
+						else if(train.startTime() <= currentTimePlus1Min && currentTime < train.endTime()){
 							//位置を更新
 							train.onObject.setXY(train);
 							train.moveObject(relX, relY);
-							train.start();
 							train.putToStage();
-							//train.started = true;
-							//train.shape.text = "●";
-						}
-					}
-					else if(train.startTime() <= currentTimePlus1Min && currentTime < train.endTime()){
-						//位置を更新
-						train.onObject.setXY(train);
-						train.moveObject(relX, relY);
-						train.putToStage();
-						if(train.startTime() <= currentTime){
-							train.start();
-							//train.started = true;
-							//train.shape.text = "●";
-						}
-					}
-				}
-				else{
-					//rail上に乗ってる場合
-					if(train.startTime() <= currentTimePlus1Min && currentTime <= train.endTime()){
-						if(train.startTime() <= currentTime && currentTime <= train.endTime())
-						{
-							if(!train.started){
-								//発車したらテキストを変える
-								//train.started = true;
-								//train.shape.text = "●";
+							if(train.startTime() <= currentTime){
 								train.start();
 							}
 						}
 					}
 					else{
-						//終了時間になった
-						//1分たったら削除
-						//ただし直通先がある場合は即時削除
+						//rail上に乗ってる場合
+						if(!train.onStage){
+							if(!train.shape){
+								train.makeObject(cj, stage);
+							}
+							train.putToStage();
+						}
+						if(train.startTime() <= currentTimePlus1Min && currentTime <= train.endTime()){
+							if(train.startTime() <= currentTime && currentTime <= train.endTime())
+							{
+								if(!train.started){
+									train.start();
+								}
+							}
+						}
+						else{
+							//終了時間になった
+							//1分たったら削除
+							//ただし直通先がある場合は即時削除
+							if(train.nextTrain){
+								if(!train.ended){
+									train.end();
+									train.removeFromStage();
+									train.toDelete = true;
+								}
+							}else{
+								if(!train.ended){
+									train.end();
+								}
+								if(train.endTime() <= currentTimeMinus1Min){
+									train.removeFromStage();
+									train.toDelete = true;
+								}
+							}
+						}
+						//位置を更新
+						train.onObject.setXY(train);
+						train.moveObject(relX, relY);
+					}
+				}else{
+					//2014/11/30 onObjectがstage上に乗ってない場合はオブジェクトをstage上から消す
+					train.removeFromStage();
+					//終了時間を1分すぎていたら削除
+					if(currentTime >= train.endTime()){
 						if(train.nextTrain){
 							if(!train.ended){
-								//train.ended = true;
 								train.end();
 								train.removeFromStage();
 								train.toDelete = true;
 							}
 						}else{
 							if(!train.ended){
-								//train.ended = true;
-								//終点まで来たらテキストを変える
-								//train.shape.text = "◎";
 								train.end();
 							}
 							if(train.endTime() <= currentTimeMinus1Min){
@@ -200,13 +252,62 @@ var TNView = (function(cj){
 							}
 						}
 					}
-					//位置を更新
-					train.onObject.setXY(train);
-					train.moveObject(relX, relY);
 				}
+
 			}
 		});
 		stage.update();
+	}
+
+	//マウスイベント
+	var dragEvents = {
+		onDrag : false,
+		startX : 0,
+		startY : 0,
+		currentX : 0,
+		currentY : 0}
+	;
+
+	//クリック、ドラッグ開始
+	function OnCanvasMouseDown(evt){
+		dragEvents.onDrag = true;
+		dragEvents.startX = evt.pageX;
+		dragEvents.startY = evt.pageY;
+		dragEvents.currentX = evt.pageX;
+		dragEvents.currentY = evt.pageY;
+	}
+
+	//ドラッグ中
+	function OnCanvasMouseMove(evt){
+		if(dragEvents.onDrag){
+			if(dragEvents.currentX != evt.pageX || dragEvents.currentY != evt.pageY){
+				relX += (evt.pageX - dragEvents.currentX);
+				relY += (evt.pageY - dragEvents.currentY);
+				MoveObjects();
+				stage.update();
+				dragEvents.currentX = evt.pageX;
+				dragEvents.currentY = evt.pageY;
+			}
+		}
+	}
+
+	//ドラッグ終了
+	function OnCanvasMouseUp(evt){
+		dragEvents.onDrag = false;
+	}
+
+	function OnCanvasMouseWheel(e){
+		var toScale = scale;
+		 e.preventDefault();
+		 var delta = e.originalEvent.deltaY ? -(e.originalEvent.deltaY) : e.originalEvent.wheelDelta ? e.originalEvent.wheelDelta : -(e.originalEvent.detail);
+		 if (delta > 0){
+			 toScale /= 2;
+		 } else {
+			 toScale *= 2;
+		 }
+		SetScale(toScale);
+
+		return false;
 	}
 
 	//public
@@ -216,10 +317,11 @@ var TNView = (function(cj){
 			//必要なオブジェクトをゲットするなど
 			Model = TNModel;
 			lines = Model.getLines();
-			stage = new cj.Stage($("canvas")[0]);
+			canvas = $("canvas")[0];
+			stage = new cj.Stage(canvas);
 			stage.removeAllChildren();
-			width = $("canvas")[0].width;
-			height = $("canvas")[0].height;
+			width = canvas.width;
+			height = canvas.height;
 			this.destView = option.dest;
 			if(skinFile){
 
@@ -231,12 +333,25 @@ var TNView = (function(cj){
 			DrawLines();
 			MoveObjects();
 			stage.update();
+
+			//二重にイベントが発生しないようにする
+			canvas.removeEventListener('mousedown', OnCanvasMouseDown, false);
+			canvas.removeEventListener('mousemove', OnCanvasMouseMove, false);
+			canvas.removeEventListener('mouseup', OnCanvasMouseUp, false);
+			canvas.removeEventListener("mousewheel" , OnCanvasMouseWheel, false);
+			var mousewheelevent = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
+			$("canvas").off(mousewheelevent, OnCanvasMouseWheel);
+
+			//canvasのマウスイベントを作成
+			canvas.addEventListener('mousedown', OnCanvasMouseDown, false);
+			canvas.addEventListener('mousemove', OnCanvasMouseMove, false);
+			canvas.addEventListener('mouseup', OnCanvasMouseUp, false);
+			canvas.addEventListener("mousewheel" , OnCanvasMouseWheel, false);
+			$("canvas").on(mousewheelevent, OnCanvasMouseWheel);
 		},
 		drawTrains : function(){
 			DrawTrains();
 		},
-		//x-yに掛ける係数
-		coefXY: coefXY,
 		tdist: tdist,
 		destView : destView
 	};

@@ -34,7 +34,7 @@ else if (isset($_POST["make"])) {
 }
 else if (isset($_POST["singleFile"])) {
 	//テスト用
-	ImportTimeTable($_POST['file'], "", "");
+	ImportTimeTable($_POST['file'], "", "", "");
 	//テキストボックスの値をそのままにする
 	$tbFolder = $_POST["folder"];
 	$tbURL = $_POST["url"];

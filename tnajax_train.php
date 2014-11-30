@@ -126,10 +126,11 @@ for($i=0; $i<count($lines); $i++)
 						$toLoadTrainList[$k] = $toLoadTrainListSub2;
 						//さらに直通先があれば追加
 						$query = "SELECT * FROM tntrain WHERE linename='$nextline' AND trainname='$nexttrain' AND service=".$_POST['Service'];
+						//echo $query . "\n";
 						$result2 = ExecQuery($mysqli, $query);
 						if($result2->num_rows > 0)
 						{
-							$row2 = $result->fetch_assoc();
+							$row2 = $result2->fetch_assoc();
 							$nextline = $row2['nextlinename'];
 							$nexttrain = $row2['nexttrainname'];
 						}

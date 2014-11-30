@@ -50,19 +50,23 @@ canvas {  }
 <div><?php echo MakeListBox() ?></div>
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
 <br>
-<input type="radio" id="weekday" name="service" value="1" checked>平日
-<input type="radio" id="holiday" name="service" value="2">休日
+<input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
+<input type="radio" id="holiday" name="service" value="2">休日ダイヤ
 <BR>
 <input type="radio" id="destFull" name="dest" value="1" checked>行先表示フル
 <input type="radio" id="destAbbr" name="dest" value="2">行先省略表示
 <input type="radio" id="destNone" name="dest" value="3">行先表示しない
 <BR>
+<input type="radio" id="sizeFull" name="size" value="1" checked>画面に合わせる
+<input type="radio" id="size1600" name="size" value="2">1600*900
+<input type="radio" id="size1024" name="size" value="3">1024*768
 <input type="button" value="Start!" onclick="Start()"/><span id="status"></span><br />
 <div id="wrapper">
-<canvas width="1600px" height="900px" >
+<canvas>
 </canvas>
 </div>
 <P>履歴</P>
+<P>2014/11/30 縦横縮尺率の変更、ドラッグによるスクロール・ホイールによる拡大縮小機能追加、画面上にないオブジェクトをcanvasに乗せないことで動作を軽量化、canvasのサイズ選択追加、京王線系統のDB追加</P>
 <P>2014/11/25 平日/休日ダイヤの切り替え、行先表示の省略・表示なし機能を追加、休日ダイヤを含めたDB拡充</P>
 <P>2014/11/24 行先表示に対応</P>
 <P>2014/11/23 初版</P>
@@ -90,6 +94,26 @@ function Start()
 	startTime.setMinutes(parseInt(startMinute));
 	startTime.setSeconds(0);
 	startTime.setMilliseconds(0);
+
+	//サイズ変更
+	var sizeOpt = parseInt($("input[name='size']:checked").val());
+	var sizeX, sizeY;
+	if(sizeOpt == 1){
+		sizeX = $(window).width();
+		sizeY = $(window).height()-100;
+	}
+	else if(sizeOpt == 2){
+		sizeX = 1600;
+		sizeY = 900;
+	}
+	else if(sizeOpt == 3){
+		sizeX = 1024;
+		sizeY = 768;
+	}
+	var canvas = $("canvas")[0];
+	canvas.width = sizeX;
+	canvas.height = sizeY;
+
 	var option = {
 		startTime : startTime,
 		speed : parseInt(speed),
@@ -98,7 +122,7 @@ function Start()
 	};
 	TNModel.init(lst, option);
 	option = {
-		dest : parseInt($("input[name='dest']:checked").val())
+		dest : parseInt($("input[name='dest']:checked").val()),
 	};
 	TNView.init(option);
 	TNModel.start();

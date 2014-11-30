@@ -135,7 +135,7 @@ var TNModel = (function(){
 			DB.readTrains(dbReadTime, dbToReadTime, service, trains, AddTrains);
 			dbReadTime = dbToReadTime;
 		}
-		$("#status").text(currentTime.toTimeString());
+		$("#status").text(currentTime.toTimeString().substr(0, 8));
 	}
 
 	//削除フラグがたった列車を消す
