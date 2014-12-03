@@ -26,7 +26,7 @@ if (isset($_POST["dl"])) {
 }
 else if (isset($_POST["make"])) {
 	echo '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">';
-	ImportTimeTableAll($_POST["folder"], $_POST["lineName"]);
+	ImportTimeTableAll($_POST["folder"], $_POST["lineName"], $_REQUEST["service"]);
 	//テキストボックスの値をそのままにする
 	$tbFolder = $_POST["folder"];
 	$tbURL = $_POST["url"];
@@ -34,7 +34,7 @@ else if (isset($_POST["make"])) {
 }
 else if (isset($_POST["singleFile"])) {
 	//テスト用
-	ImportTimeTable($_POST['file'], "", "", "");
+	ImportTimeTable($_POST['file'], "", "", "",$_REQUEST["service"]);
 	//テキストボックスの値をそのままにする
 	$tbFolder = $_POST["folder"];
 	$tbURL = $_POST["url"];
@@ -87,6 +87,8 @@ function MakeListBox()
   <div><?php echo MakeListBox() ?></div>
 
   <P>時刻表csvを作成</P>
+  <input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
+  <input type="radio" id="holiday" name="service" value="2">休日ダイヤ
   <input type="submit" id="make" name="make" value="csv作成開始"><BR>
   <BR>
   <P>テスト用</P>

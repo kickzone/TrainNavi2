@@ -2,7 +2,7 @@
 require 'funcs.php';
 require_once 'simple_html_dom.php';
 
-function ImportTimeTableAll($folder, $lineName)
+function ImportTimeTableAll($folder, $lineName ,$service)
 {
 	//30分間待ってやる
 	set_time_limit (1800);
@@ -17,12 +17,12 @@ function ImportTimeTableAll($folder, $lineName)
 
 	foreach ($iterator as $fileinfo) { // $fileinfoはSplFiIeInfoオブジェクト
 		if ($fileinfo->isFile() && $fileinfo->getExtension() == "htm") {
-			ImportTimeTable($fileinfo->getRealPath(), $csvTrain, $csvRoute, $lineName);
+			ImportTimeTable($fileinfo->getRealPath(), $csvTrain, $csvRoute, $lineName, $service);
 		}
 	}
 }
 
-function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
+function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 {
 	$dom = file_get_html($fileName);
 
@@ -64,14 +64,15 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 	$trainRangeName = null;
 
 	//土曜休日運転 or 平日運転
-	if(strstr($aService[0], '休日運転'))
-	{
-		$service = 2;
-	}
-	else
-	{
-		$service = 1;
-	}
+	//2014/12/02 UIで決定するように変更 '毎日運転'なんてのがあるから
+	//if(strstr($aService[0], '休日運転'))
+	//{
+	//	$service = 2;
+	//}
+	//else
+	//{
+	//	$service = 1;
+	//}
 	$currentTrain->service = $service;
 
 	//列車種類、列車番号
@@ -101,34 +102,69 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 	$kindCount = 0;
 	$nameCount = 0;
 
+	$beforeStationName = "";
+
 	//まず初めの路線名を決定する
-	$stationsTmp = $dom->find('a[href*=station]');
-	$stationFirstNode = $stationsTmp[0]->parentNode()->parentNode()->parentNode()->parentNode();
-	$stationFirstArr = SplitItem($stationFirstNode->plaintext);
-	$currentLine = SelectLine($stationFirstArr[0], $dom, $mysqli);
-	echo $currentLine, ' からはじまる<BR>';
-	$currentTrain->lineName = $currentLine;
-	ModifyTrainKind($currentTrain->trainKind, $currentLine);
-	if($trainRangeKind != null)
+	foreach($dom->find('a[href*=station]') as $stationLink)
 	{
-		$trainRangeKind[0] = ModifyStationName($trainRangeKind[0], $currentLine);
-		$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
-	}
-	if($trainRangeName != null)
-	{
-		$trainRangeName[0] = ModifyStationName($trainRangeName[0], $currentLine);
-		$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
+		$dom->find('a[href*=station]');
+
+		$stationFirstNode = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
+		$stationFirstArr = SplitItem($stationFirstNode->plaintext);
+		$currentLine = SelectLine($stationFirstArr[0], $dom, $mysqli);
+		$currentStationName = $stationFirstArr[0];
+
+		$kindChanged = false;
+		$nameChanged = false;
+
+		ModifyTrainKind($currentTrain->trainKind, $currentLine);
+		if($trainRangeKind != null)
+		{
+			$trainRangeKind[0] = ModifyStationName($trainRangeKind[0], $currentLine);
+			$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
+			if($currentStationName == $trainRangeKind[1]) $kindChanged = true;
+		}
+		if($trainRangeName != null)
+		{
+			$trainRangeName[0] = ModifyStationName($trainRangeName[0], $currentLine);
+			$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
+			if($currentStationName == $trainRangeName[1]) $nameChanged = true;
+		}
+		if($kindChanged)
+		{
+			$kindCount++;
+			echo "列車種類が変わった : " . $aTrainKinds[$kindCount*2+1] . "<BR>";
+			$currentTrain->trainKind = $aTrainKinds[$kindCount*2+1];
+			$trainRangeKind = TrainRange($aTrainKinds[$kindCount*2]);
+		}
+		if($nameChanged)
+		{
+			$nameCount++;
+			echo "列車番号が変わった : " . $aTrainNames[$nameCount*2+1] . "<BR>";
+			$currentTrain->trainName = $aTrainNames[$nameCount*2+1];
+			$trainRangeName = TrainRange($aTrainNames[$nameCount*2]);
+		}
+		//2014/12/02 DBに存在しない駅はスキップ
+		if($currentLine == "") continue;
+
+		echo $currentLine, ' からはじまる<BR>';
+		$currentTrain->lineName = $currentLine;
+
+		break;
 	}
 
 	//経路情報をゲットしていく
 	$route = new Route();
+	$trainNameTable = array();
+	$trainNameTable[$currentTrain->lineName] = $currentTrain->trainName;
 	foreach($dom->find('a[href*=station]') as $stationLink)
 	{
 		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$currentStation = SplitItem($station->plaintext);
-		$currentStation[0] = ModifyStationName($currentStation[0], $currentTrain->lineName);
 		$stationName = $currentStation[0];
+		$stationName = ModifyStationName($stationName, $currentTrain->lineName);
 
+		//2014/12/02 DBに存在しない駅はスキップ
 		if($beforeStation != null)
 		{
 			//路線が変わったかどうか判定
@@ -153,15 +189,32 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 				$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
 				if($beforeStationName == $trainRangeName[1]) $nameChanged = true;
 			}
-			if($result->num_rows==0)
+			$special = SpecialChange($beforeStationName, $currentTrain->lineName, $currentTrain->trainKind);
+			if($result->num_rows==0 || $special != "")
 			{
 				//路線が変わった
 				//Trainを新規作成
-				echo "路線が変わった : ".$currentTrain->lineName." に " . $stationName . "がなかった<BR>";
+				if($special){
+					echo "路線が変わった(特別対処)";
+				} else{
+					echo "路線が変わった : ".$currentTrain->lineName." に " . $stationName . "がなかった<BR>";
+				}
 				$newTrain = new Train();
 				$trains[] = $newTrain;
-				$currentLine = SelectLine($stationName, $dom, $mysqli);
-				echo $currentLine . " に変更<BR>	";
+				if($special){
+					$currentLine = $special;
+				}else{
+					$currentLine = SelectLine($stationName, $dom, $mysqli);
+				}
+				if($currentLine == ""){
+					//2014/12/03 未登録なのでスキップ
+					$beforeStation = $currentStation;
+					$beforeStationName = $stationName;
+					echo "路線未登録のためスキップ<BR>";
+					continue;
+				}else{
+					echo $currentLine . " に変更<BR>	";
+				}
 
 				//あさぎり特殊対処 駅名と路線名の不一致を訂正
 				ModifyAsagiri($route->startStation, $currentLine);
@@ -181,10 +234,19 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 					//前のTrainの情報をコピー
 					$newTrain->trainKind = $currentTrain->trainKind;
 				}
+
 				if($nameChanged)
 				{
 					//列車番号も同時に変わる場合
 					$nameCount++;
+					//2014/12/02 中央快速線→緩行線→快速線など、同一路線に戻ってくる場合に列車番号を変えないと一意性がなくなる
+					if(array_key_exists($currentLine, $trainNameTable))
+					{
+						if($trainNameTable[$currentLine] == $aTrainNames[$nameCount*2+1])
+						{
+							$aTrainNames[$nameCount*2+1] .= "A";
+						}
+					}
 					echo "列車番号が変わった : " . $aTrainNames[$nameCount*2+1] . "<BR>";
 					$newTrain->trainName = $aTrainNames[$nameCount*2+1];
 					$trainRangeName = TrainRange($aTrainNames[$nameCount*2]);
@@ -192,6 +254,15 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 				else
 				{
 					$newTrain->trainName = $currentTrain->trainName;
+					//2014/12/02 中央快速線→緩行線→快速線など、同一路線に戻ってくる場合に列車番号を変えないと一意性がなくなる
+					if(array_key_exists($currentLine, $trainNameTable))
+					{
+						if($trainNameTable[$currentLine] == $currentTrain->trainName)
+						{
+							$newTrain->trainName .= "A";
+							echo "列車番号重複のため変更 : " . $newTrain->trainName . "<BR>";
+						}
+					}
 				}
 				ModifyTrainKind($newTrain->trainKind, $currentLine);
 				$newTrain->service = $currentTrain->service;
@@ -214,6 +285,7 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 				//置き換える
 				$currentTrain = $newTrain;
 				$bLineChanged = true;
+				$trainNameTable[$currentTrain->lineName] = $currentTrain->trainName;
 			}
 			//化け急など、同一路線内で列車種類が途中で変わっているかどうかチェック
 			if(($kindChanged || $nameChanged) && count($currentTrain->routes) > 0 && !$bLineChanged)
@@ -272,7 +344,9 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName)
 			//着時間を代入
 			$route->endStation = $stationName;
 			$route->endTime = $endTime;
-			$currentTrain->routes[] = $route;
+			//着時間の補正
+			CheckFalseEndTime($route, $currentLine);
+			if($route->startTime) $currentTrain->routes[] = $route;
 			$route = new Route();
 		}
 
@@ -465,9 +539,25 @@ function ModifyStationName($currentStation, $lineName)
 				"新宿" => "新線新宿",
 				);
 			break;
-		case "":
+		case "中央線快速":
 			$modifyList = array(
-					"壓c" => "螢田" //何故か文字化けしている
+			"阿佐ヶ谷" => "阿佐ケ谷",
+			"千駄ヶ谷" => "千駄ケ谷",
+			"市ヶ谷" => "市ケ谷"
+				);
+			break;
+		case "中央・総武緩行線":
+			$modifyList = array(
+			"阿佐ヶ谷" => "阿佐ケ谷",
+			"千駄ヶ谷" => "千駄ケ谷",
+			"市ヶ谷" => "市ケ谷"
+					);
+			break;
+		default:
+			$modifyList = array(
+					"壓c" => "螢田", //何故か文字化けしている
+					"阿佐ヶ谷" => "阿佐ケ谷",
+					"千駄ヶ谷" => "千駄ケ谷"
 			);
 			break;
 	}
@@ -564,6 +654,50 @@ function CalcPassageTime($mysqli, $beforeLine, $beforeStation, $beforeTime, $pas
 	$passageDiffMinutes = (int)round($diff->i * $spanBefore / ($spanAfter+$spanBefore));
 	$passageDT = $beforeDT->add(new DateInterval("PT".$passageDiffMinutes."M"));
 	return $passageDT->format("H:i");
+}
+
+//通常の乗り入れ判断では処理できないものをまとめる
+function SpecialChange($stationName, $currentLineName, $trainKind)
+{
+	if($stationName == "三鷹" && $trainKind == "普通"){
+		if($currentLineName == "中央線快速"){
+			return "中央・総武緩行線";
+		}
+	}
+	if($stationName == "御茶ノ水" && $trainKind == "普通"){
+		if($currentLineName == "中央線快速"){
+			return "中央・総武緩行線";
+		}
+	}
+	return "";
+}
+
+//中央快速線など、htmlからゲットした時刻が信用できない場合の対処
+function CheckFalseEndTime($route, $currentLine)
+{
+	if($currentLine == "中央線快速"){
+		$startStations = array("吉祥寺", "武蔵境", "西国分寺", "武蔵小金井");
+		$endStations = array("三鷹", "三鷹", "国分寺", "国分寺");
+		$falseTimes = array(3, 3, 3, 3);
+		for($i=0; $i<count($startStations); $i++){
+			if($route->startStation == $startStations[$i] && $route->endStation == $endStations[$i]){
+				$tStart = strtotime($route->startTime);
+				$tEnd = strtotime($route->endTime);
+				$aStart = getdate($tStart);
+				if($aStart['hours'] < 4) $tStart += (60*60*24);
+				$aEnd = getdate($tEnd);
+				if($aEnd['hours'] < 4) $tEnd += (60*60*24);
+				if($tStart < $tEnd && ($tEnd - $tStart > $falseTimes[$i] * 60)){
+					//指定した時間より大きかった
+					$tEnd -= ($tEnd - $tStart - ($falseTimes[$i] * 60));
+					$aEnd = getdate($tEnd);
+					$route->endTime = sprintf("%02d:%02d", $aEnd['hours'], $aEnd['minutes']);
+					echo "到着時間変更：$route->endTime" . "<BR>";
+				}
+				break;
+			}
+		}
+	}
 }
 
 function GetKiloFromDB($mysqli, $lineName, $stationName)

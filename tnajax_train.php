@@ -154,13 +154,13 @@ for($i=0; $i<count($lines); $i++)
 //改めて読み込む
 for($i=0; $i<count($lines); $i++)
 {
+	$toLoadTrainListSub = $toLoadTrainList[$i];
+	if(count($toLoadTrainListSub) == 0) continue;
+
 	$lineID = $lineIDList[$lines[$i]];
 	$ret .=  "-$lineID,$lines[$i]\n";
-	$toLoadTrainListSub = $toLoadTrainList[$i];
 	$trainKindListSub = $trainKindList[$lineID];
 	$stationIDListSub = $stationIDList[$lineID];
-
-	if(count($toLoadTrainListSub) == 0) continue;
 
 	$query = MakeTrainsSQL($lines[$i], $toLoadTrainListSub);
 	$result = ExecQuery($mysqli, $query);

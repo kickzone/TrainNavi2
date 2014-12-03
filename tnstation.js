@@ -28,6 +28,9 @@ var TNStation = function(line, text){
 	this.stage = null;
 	this.shape = null;
 
+	//駅名
+	this.shapeEkimei = null;
+
 	//現在stageに登録中かどうか
 	this.onStage = false;
 
@@ -37,24 +40,31 @@ var TNStation = function(line, text){
 }
 
 TNStation.prototype = {
-	makeObject : function(cj, stage, absX, absY){
+	makeObject : function(cj, stage, absX, absY, scale){
 		if(this.shape){
 			stage.removeChild(this.shape);
+			if(this.scale <= 16.0) stage.removeChild(this.shapeEkimei);
 			this.shape = null;
 		} else {
 			this.stage = stage;
 			this.cj = cj;
 		}
+		this.scale = scale;
 		var sha = new cj.Shape()
 		this.shape = sha;
 		sha.alpha = 0.8;
 		var gr = sha.graphics;
 		//描画
 		gr.beginStroke(this.line.lineColor).beginFill(this.line.lineColor).drawRect(-this.size/2, -this.size/2, this.size, this.size, 1);
+		//駅名
+		var shaEki = new cj.Text(this.stationName, this.size.toString(10) + "px ＭＳ Ｐゴシック", "#696969");
+		shaEki.alpha = 0.4;
+		this.shapeEkimei = shaEki;
 		//stageに追加
 		//2014/11/30 画面上にある場合のみ
 		if(this.inCanvas()){
 			stage.addChild(sha);
+			if(this.scale <= 16.0) stage.addChild(shaEki);
 			this.onStage = true;
 		}
 
@@ -152,17 +162,21 @@ TNStation.prototype = {
 	},
 	//オブジェクト移動 スクロール時など
 	moveObject : function(relX, relY){
-		this.shape.x = this.absX * this.scale + relX;
-		this.shape.y = this.absY * this.scale + relY;
+		this.shape.x = this.absX/* * this.scale */+ relX;
+		this.shape.y = this.absY/* * this.scale */+ relY;
+		this.shapeEkimei.x = this.shape.x - 10;
+		this.shapeEkimei.y = this.shape.y + 10;
 		//shapeが画面上から消える場合はstageから消す
 		if(this.onStage){
 			if(!this.inCanvas()){
 				this.stage.removeChild(this.shape);
+				if(this.scale >= 16.0) this.stage.removeChild(this.shapeEkimei);
 				this.onStage = false;
 			}
 		} else{
 			if(this.inCanvas()){
 				this.stage.addChild(this.shape);
+				if(this.scale <= 16.0) this.stage.addChild(this.shapeEkimei)
 				this.onStage = true;
 			}
 		}

@@ -123,9 +123,21 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 			case "私鉄無料急行":
 				$trainkind =  $trainKindListSub["急行"];
 				break;
+			case "通勤特別快速":
+				$trainkind =  $trainKindListSub["通勤特快"];
+				break;
 			default:
-				//複雑なものは特急だろう
-				$trainkind = $trainKindListSub["特急"];
+				//ホリデー快速、ホームライナーにも対応
+				if(strpos($row['trainkind'], "ホリデー快速") !== FALSE){
+					$trainkind = $trainKindListSub["ホリデー快速"];
+				}
+				else if(strpos($row['trainkind'], "ホームライナー") !== FALSE){
+					$trainkind = $trainKindListSub["ホームライナー"];
+				}
+				else{
+					//複雑なものは特急だろう
+					$trainkind = $trainKindListSub["特急"];
+				}
 				$trainkindname = $row['trainkind'];
 				break;
 		}

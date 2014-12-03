@@ -116,7 +116,7 @@ var TNView = (function(cj){
 					//緯度経度からの計算
 					var absX = (station.longitude - longitude_base) * coef.X + (width/2);
 					var absY = (latitude_base - station.latitude) * coef.Y + (height/2);
-					station.makeObject(cj, stage, absX, absY);
+					station.makeObject(cj, stage, absX, absY, scale);
 				}
 			});
 			$.each(line.railroads, function(j, railroad){

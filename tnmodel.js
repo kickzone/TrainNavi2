@@ -173,12 +173,24 @@ var TNModel = (function(){
 						if(trainInPool.nextLineID == train.line.lineID && trainInPool.nextTrainName == train.trainName){
 							trainInPool.nextTrain = train;
 							train.prevTrain = trainInPool;
+							//2014/12/02 直通前後で1秒も止まらない場合に対処
+							if(trainInPool.routes[trainInPool.routes.length-1].endTime.getTime() == train.routes[0].startTime.getTime())
+							{
+								trainInPool.routes[trainInPool.routes.length-1].endTime.setSeconds(-15);
+								train.routes[0].startTime.setSeconds(15);
+							}
 						}
 					}
 					if(train.nextLineID && !train.nextTrain){
 						if(train.nextLineID == trainInPool.line.lineID && train.nextTrainName == trainInPool.trainName){
 							train.nextTrain = trainInPool;
 							trainInPool.prevTrain = train;
+							//2014/12/02 直通前後で1秒も止まらない場合に対処
+							if(train.routes[train.routes.length-1].endTime.getTime() == trainInPool.routes[0].startTime.getTime())
+							{
+								train.routes[train.routes.length-1].endTime.setSeconds(-15);
+								train.routes[0].startTime.setSeconds(15);
+							}
 						}
 					}
 				});
