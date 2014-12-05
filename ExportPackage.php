@@ -165,10 +165,25 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 	$endStationIDBefore = 0;
 	$startBefore = "";
 	$endBefore = "";
+	$passage = 0;
 	while($row2 = $result2->fetch_assoc())
 	{
-		$startStationID = $stationIDListSub[$row2['startstation']];
-		$endStationID = $stationIDListSub[$row2['endstation']];
+		$startStation = $row2['startstation'];
+		$endStation = $row2['endstation'];
+
+		//2014/12/04 ()で駅名が囲んであったら、通過とみなす
+		//始点(passage=2)と終点(passage=1)、両方(passage=3)のみ対応
+		if(strpos($startStation, "(") === 0){
+			$startStation = substr($startStation, 1, strlen($startStation)-2);
+			if($passage == 1 || $passage == 3) $passage = 3;
+			else $passage = 2;
+		} else if(strpos($endStation, "(") === 0){
+			$endStation = substr($endStation, 1, strlen($endStation)-2);
+			if($passage == 2 || $passage == 3) $passage = 3;
+			else $passage = 1;
+		}
+		$startStationID = $stationIDListSub[$startStation];
+		$endStationID = $stationIDListSub[$endStation];
 		$start = $row2['start'];
 		$end = $row2['end'];
 
@@ -178,11 +193,13 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 		if($endBefore == $start) $start = "";
 		$ret .= ",$startStationID,$start,$endStationID,$end";
 
-		$startStationIDBefore = $stationIDListSub[$row2['startstation']];
-		$endStationIDBefore = $stationIDListSub[$row2['endstation']];
+		$startStationIDBefore = $stationIDListSub[$startStation];
+		$endStationIDBefore = $stationIDListSub[$endStation];
 		$startBefore = $row2['start'];
 		$endBefore = $row2['end'];
 	}
+	$ret .= ",";
+	if($passage > 0) $ret .= $passage;
 
 	return $ret;
 }

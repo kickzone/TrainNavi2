@@ -96,6 +96,10 @@ TNStation.prototype = {
 			if(train.prevTrain){
 				//乗り入れがあった場合は、駅に接続する線路との角の二等分線上の値を計算する
 				var railPrevPrev = train.prevTrain.lastStation().getPrevRail(train.prevTrain.isNobori);
+				if(railPrevPrev == null){
+					var test = 0;
+					test = 1;
+				}
 				p = TNFuncs.calcBisectUnitVector(
 						railPrevPrev.secondLastPoint(train.prevTrain.isNobori),
 						{x: this.absX, y:this.absY},

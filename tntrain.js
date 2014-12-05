@@ -24,7 +24,7 @@ var TNTrain = function(line, text){
 	//以降、終点までの経路情報
 	this.routes = [];
 	var i;
-	for(i=7; i<elements.length; i+=4)
+	for(i=7; i<elements.length-1; i+=4)
 	{
 		var route = {};
 		var startStationID = elements[i];
@@ -43,6 +43,13 @@ var TNTrain = function(line, text){
 		route.endTime = MakeTime(elements[i+3]);
 		this.routes.push(route);
 	}
+
+	//通過かどうか
+	this.passage = 0;
+	//終点を通過
+	if(elements[i] == "1") this.passage = 1;
+	//始点を通過
+	else if(elements[i] == "2") this.passage = 2;
 
 	//routesの値を調整
 	//1秒も止まらないのはあり得ないので30秒停車させる
@@ -220,13 +227,21 @@ TNTrain.prototype = {
 		var timeReq = (route.endTime - route.startTime) / 1000;
 		//現在時刻(秒)
 		var current = (time - route.startTime) / 1000;
-		if(timeReq < this.accTime + this.decTime)
+		var accTime = this.accTime;
+		var decTime = this.decTime;
+
+		//終点が通過駅
+		if(this.passage == 1 && route == this.routes[this.routes.length-1]) decTime = 0;
+		//始点が通過駅
+		if(this.passage == 2 && route == this.routes[0]) accTime = 0;
+
+		if(timeReq < accTime + decTime)
 		{
 			//加減速にかかる時間よりも所要時間が短い場合
 
 			//所要時間を加速時間・減速時間の比で掛けて加減速時間を求める
-			var accDash = timeReq * this.accTime / (this.accTime + this.decTime);
-			var decDash = timeReq * this.decTime / (this.accTime + this.decTime);
+			var accDash = timeReq * accTime / (accTime + decTime);
+			var decDash = timeReq * decTime / (accTime + decTime);
 			//最高速(km/s)を求める
 			var Vmax = distance / (timeReq/2);
 			if(accDash >= current)
@@ -249,26 +264,26 @@ TNTrain.prototype = {
 			//加速-最高速-減速のパターン
 
 			//最高速(km/s)を求める
-			var Vmax = distance / (timeReq - this.accTime/2 - this.decTime/2);
+			var Vmax = distance / (timeReq - accTime/2 - decTime/2);
 			if(this.accTime >= current)
 			{
 				//加速中
-				this.velocity = Vmax * current / this.accTime * 3600;
-				var ret = Vmax / this.accTime * current * current / 2;
+				this.velocity = Vmax * current / accTime * 3600;
+				var ret = Vmax / accTime * current * current / 2;
 				return route.startStation.kilo + ret;
 			}
 			else if(timeReq - this.decTime >= current)
 			{
 				//最高速運転中
 				this.velocity = Vmax * 3600;
-				var ret = Vmax * (2*current - this.accTime) / 2;
+				var ret = Vmax * (2*current - accTime) / 2;
 				return route.startStation.kilo + ret;
 			}
 			else
 			{
 				//減速中
-				this.velocity = Vmax * (timeReq - current) / this.decTime * 3600;
-				var ret = distance - Vmax / this.decTime * (timeReq - current) * (timeReq - current) / 2;
+				this.velocity = Vmax * (timeReq - current) / decTime * 3600;
+				var ret = distance - Vmax / decTime * (timeReq - current) * (timeReq - current) / 2;
 				return route.startStation.kilo + ret;
 			}
 		}
