@@ -46,36 +46,9 @@ var TNView = (function(cj){
 	//スキンファイル
 	var skinFile = null;
 
+	//自動的に中央に寄せるオブジェクト
+	var centerObj = null;
 
-	//緯度経度で初期化
-	/*function InitLatLon(){
-		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
-		var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
-		$.each(lines, function(i, line){
-			$.each(line.getSortedPoints(), function(j, point){
-				if(minLat > point.latitude) minLat = point.latitude;
-				if(maxLat < point.latitude) maxLat = point.latitude;
-				if(minLon > point.longitude) minLon = point.longitude;
-				if(maxLon < point.longitude) maxLon = point.longitude;
-			});
-		});
-		//端の調整
-		minLat -= 0.01;
-		minLon -= 0.01;
-		maxLat += 0.01;
-		maxLon += 0.01;
-
-		//canvasの幅、高さと基準値を使って、X-Y座標に掛けるための係数を得る
-		var coefW = width / (maxLon - minLon);
-		var coefH = height / (maxLat - minLat);
-		coefXY = Math.min(coefW, coefH);
-		//latitude = (maxLat + minLat) / 2;
-		//longitude = (maxLon + minLon) / 2;
-		latitude_base_lu = maxLat;
-		longitude_base_lu = minLon;
-		latitude_base_rd = minLat;
-		longitude_base_rd = maxLon;
-	}*/
 
 	function InitLatLon(){
 		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
@@ -256,6 +229,12 @@ var TNView = (function(cj){
 
 			}
 		});
+		if(centerObj){
+			//列車をクリックしたら、常に画面の中央に持ってくる
+			relX = width / 2 - centerObj.absX;
+			relY = height / 2 - centerObj.absY;
+			MoveObjects();
+		}
 		stage.update();
 	}
 
@@ -280,6 +259,8 @@ var TNView = (function(cj){
 	//ドラッグ中
 	function OnCanvasMouseMove(evt){
 		if(dragEvents.onDrag){
+			//ドラッグしたら列車同期表示をやめる
+			centerObj = null;
 			if(dragEvents.currentX != evt.pageX || dragEvents.currentY != evt.pageY){
 				relX += (evt.pageX - dragEvents.currentX);
 				relY += (evt.pageY - dragEvents.currentY);
@@ -353,7 +334,13 @@ var TNView = (function(cj){
 			DrawTrains();
 		},
 		tdist: tdist,
-		destView : destView
+		destView : destView,
+		setCenterObj : function(obj){
+			centerObj = obj;
+		},
+		getCenterObj : function(){
+			return centerObj;
+		}
 	};
 
 })(createjs);

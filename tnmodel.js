@@ -32,6 +32,8 @@ var TNModel = (function(){
 
 	var onInit = true;
 
+	//プロパティ表示中のobj
+	var propObj = null;
 
 	//路線、駅などの静的オブジェクト読み込み
 	function readLines(aStrLines)
@@ -124,6 +126,11 @@ var TNModel = (function(){
 		//現在時間をtrainに送信
 		$.each(trains, function(i, train){
 			train.setTime(currentTime);
+			if(train == propObj){
+				if(train.ended){
+					propObj = null;
+				}
+			}
 		});
 		//Viewを更新
 		//描画
@@ -136,6 +143,10 @@ var TNModel = (function(){
 			dbReadTime = dbToReadTime;
 		}
 		$("#status").text(currentTime.toTimeString().substr(0, 8));
+		//2014/12/07 プロパティ表示
+		if(propObj){
+			$("#prop").text(propObj.viewPropStr());
+		}
 	}
 
 	//削除フラグがたった列車を消す
@@ -218,6 +229,8 @@ var TNModel = (function(){
 			fps = option.fps;
 			startTime = option.startTime;
 			service = option.service;
+			this.viewProp(null);
+			$("#prop").text("");
 		},
 		getLines : function(){
 			return lines;
@@ -254,6 +267,12 @@ var TNModel = (function(){
 			    	createjs.Ticker.setFPS(fps);
 			    }
 			}, 100);
+		},
+		//2014/12/07 objの内容をプロパティ画面に表示
+		//objにはviewPropStr()を実装しておくこと
+		viewProp : function(obj){
+			propObj = obj;
+			TNView.setCenterObj(obj);
 		}
 	};
 

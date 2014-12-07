@@ -80,7 +80,11 @@ for($i=0; $i<count($lines); $i++)
 	else
 	{
 		#通常
-		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' AND starttime>=\"".$_POST['FromTime']."\" and starttime<=\"".$_POST['ToTime']."\" AND service=".$_POST['Service'];
+		//$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' AND starttime>=\"".$_POST['FromTime']."\" and starttime<=\"".$_POST['ToTime']."\" AND service=".$_POST['Service'];
+		//2014/12/07 新クエリー
+		$query = "SELECT distinct trainname FROM tnroute WHERE linename='$lines[$i]' AND service=".$_POST['Service']
+			." AND ((starttime<=endtime AND starttime<=\"".$_POST['ToTime']."\" AND \"".$_POST['FromTime']."\"<= endtime) OR"
+			." (starttime > endtime AND (starttime<=\"".$_POST['ToTime']."\" OR \"".$_POST['FromTime']."\"<= endtime)))";
 	}
 	$result = ExecQuery($mysqli, $query);
 	if($result->num_rows > 0)

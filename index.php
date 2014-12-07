@@ -10,7 +10,7 @@ function MakeListBox()
 	$query = "SELECT * FROM tnline";
 	$result = ExecQuery($mysqli, $query);
 
-	$retStr = "<select name=\"lineName[]\" size=\"5\" multiple>";
+	$retStr = "<select name=\"lineName[]\" size=\"5\" class=\"linelist\" multiple>";
 	while ($row = $result->fetch_assoc()) {
 		$retStr .= "<option ";
 		$retStr .= "value=\"" . $row["linename"] . "\">". $row["linename"]."</option>";
@@ -31,7 +31,24 @@ function MakeListBox()
 <script src="easeljs-0.7.1.min.js"></script>
 <script src="jquery-2.1.1.js"></script>
 <title>TrainNavi2</title>
-<style type='text/css'>
+<style>
+.linelist{
+  float: left;
+}
+.cpanel{
+  clear: both;
+}
+#prop {
+  /* basic styling */
+  float: left;
+  width: 350px;
+  height: 95px;
+  font-size: 14px;
+  border: 1px solid #555;
+  white-space: pre-wrap;
+
+
+}
 #wrapper{
     height: auto;
     overflow: auto;
@@ -48,6 +65,8 @@ canvas {  }
 </head>
 <body>
 <div><?php echo MakeListBox() ?></div>
+<div id="prop"></div><BR>
+<div class="cpanel">
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
 <br>
 <input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
@@ -61,12 +80,15 @@ canvas {  }
 <input type="radio" id="size1600" name="size" value="2">1600*900
 <input type="radio" id="size1024" name="size" value="3">1024*768
 <input type="button" value="Start!" onclick="Start()"/><span id="status"></span><br />
+</div>
 <div id="wrapper">
 <canvas>
 </canvas>
 </div>
 <P>履歴</P>
-<P>2014/12/03 線路が消える不具合などデバッグ、一定以上拡大したら駅名を表示する、中央快速線・青梅線・五日市線のDB追加
+<P>2014/12/07 列車をゲットする論理変更、走行中の列車をすべて表示できるようにした。列車をクリックするとその列車の情報を表示する機能、自動画面スクロールする機能を追加した。</P>
+<P>2014/12/05 路線間通過電車に対応(データはない)、中央・総武緩行線、東京メトロ東西線、東葉高速線、京王井の頭線、大雄山線追加</P>
+<P>2014/12/03 線路が消える不具合などデバッグ、一定以上拡大したら駅名を表示する、中央快速線・青梅線・五日市線のDB追加</P>
 <P>2014/11/30 縦横縮尺率の変更、ドラッグによるスクロール・ホイールによる拡大縮小機能追加、画面上にないオブジェクトをcanvasに乗せないことで動作を軽量化、canvasのサイズ選択追加、京王線系統のDB追加</P>
 <P>2014/11/25 平日/休日ダイヤの切り替え、行先表示の省略・表示なし機能を追加、休日ダイヤを含めたDB拡充</P>
 <P>2014/11/24 行先表示に対応</P>

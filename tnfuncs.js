@@ -83,15 +83,15 @@ var TNFuncs = (function(){
 	}
 
 	//省略名称を得る
-	function getDestStr(str){
-		if(TNView.destView == 2){
+	function getDestStr(str, view){
+		if(view == 2){
 			//省略駅名
 			if(str == "新松田")	return '松';
 			if(str == "相武台前") return '武';
 			if(str == "京王八王子") return "八";
 			if(str == "京王多摩センター") return "多";
 			if(str == "東葉勝田台") return "葉";
-			
+
 			return str.charAt(0);
 		}
 		return str;

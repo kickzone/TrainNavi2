@@ -150,6 +150,11 @@ TNTrain.prototype = {
 		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		this.shape = sha;
 		sha.alpha = 0.7;
+
+		//2014/12/07 列車を表す●にイベントハンドラを登録し、さらに関連付けるtrainへの参照を追加
+		sha.addEventListener("click", this.ClickHandler);
+		sha.train = this;
+
 		var textSize = this.size * 1.5;
 		//行先の文字列オブジェクトを作成
 		if(TNView.destView == 1 || TNView.destView == 2){
@@ -340,6 +345,7 @@ TNTrain.prototype = {
 	endTime : function(){
 		return this.routes[this.routes.length-1].endTime;
 	},
+	//開始
 	start : function(){
 		this.started = true;
 		if(!this.shape) return;
@@ -348,6 +354,7 @@ TNTrain.prototype = {
 		gr.beginFill(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		this.shape.cache(-this.size*2, -this.size*2, this.size*8, this.size*8);
 	},
+	//終了
 	end : function(){
 		this.ended = true;
 		if(!this.shape) return;
@@ -356,15 +363,103 @@ TNTrain.prototype = {
 		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size);
 		gr.beginStroke(this.trainKind.trainKindColor).drawCircle(-this.size/2,-this.size/2,this.size/2);
 		if(this.started) this.shape.updateCache();
+		//情報を表示するオブジェクトを切り替える
+		if(this == TNView.getCenterObj()){
+			if(this.nextTrain){
+				TNModel.viewProp(this.nextTrain);
+			}else{
+				TNModel.viewProp(null);
+			}
+		}
 	},
 	getDestStr : function(){
-		if(this.terminal) return TNFuncs.getDestStr(this.terminal);
+		if(this.terminal) return TNFuncs.getDestStr(this.terminal, TNView.destView);
 		var train = this;
 		while(train.nextTrain)
 		{
 			train = train.nextTrain;
-
 		}
-		return TNFuncs.getDestStr(train.routes[train.routes.length-1].endStation.stationName);
+		return TNFuncs.getDestStr(train.routes[train.routes.length-1].endStation.stationName, TNView.destView);
+	},
+	//プロパティ表示用の文字列作成
+	viewPropStr : function(){
+		//発駅、発時間
+		var train = this;
+		while(train.prevTrain)
+		{
+			train = train.prevTrain;
+		}
+		var startTime = train.routes[0].startTime;
+		var retStr = "" + ("0" + startTime.getHours()).slice(-2);
+		retStr += ":" +  ("0" + startTime.getMinutes()).slice(-2);
+		retStr += " " + train.routes[0].startStation.stationName + "発 ";
+
+		//列車種類名
+		train = this;
+		if(train.trainKindName){
+			//ロマンスカーの名前など
+			retStr += train.trainKindName;
+		}else{
+			retStr += train.trainKind.trainKindName;
+		}
+
+		//行先
+		if(this.terminal){
+			retStr += this.terminal + "行\n";
+		}else{
+
+			while(train.nextTrain)
+			{
+				train = train.nextTrain;
+			}
+			retStr += train.routes[train.routes.length-1].endStation.stationName + "行\n";
+		}
+		var currentTime = TNModel.getCurrentTime();
+
+		//次の駅まで
+		train = this;
+		retStr += "次は" + this.currentRoute.endStation.stationName;
+		var span = this.currentRoute.endTime - currentTime;
+		var spanM = Math.ceil(span/60/1000);
+		retStr += " " + spanM + "分で到着\n";
+
+		//終点までの所要時間
+		while(train)
+		{
+			span = train.routes[train.routes.length-1].endTime - currentTime;
+			spanM = Math.ceil(span/60/1000);
+			//次の駅=終点だったら省略
+			if(train.routes[train.routes.length-1].endStation != this.currentRoute.endStation){
+				retStr += train.routes[train.routes.length-1].endStation.stationName + "まで" + spanM + "分 \n";
+			}
+			train = train.nextTrain;
+		}
+
+		//現在速度
+		retStr += "現在速度 " + Math.abs(this.velocity).toFixed(2) + "km/h\n";
+
+		//表定速度
+		retStr += "表定速度 ";
+		train = this;
+		while(train.prevTrain)
+		{
+			train = train.prevTrain;
+		}
+		var kilo = 0;
+		while(train != this){
+			kilo += Math.abs(train.routes[0].startStation.kilo - train.routes[train.routes.length-1].endStation.kilo);
+			train = train.nextTrain;
+		}
+		kilo += Math.abs(train.routes[0].startStation.kilo - this.kilo);
+		span = currentTime - startTime;
+		var hyotei = kilo * 60 * 60 * 1000 / span;
+		retStr += hyotei.toFixed(2) + "km/h";
+
+		return retStr;
+	},
+	//クリックイベント
+	ClickHandler : function(eventObject){
+		var train = eventObject.target.train;
+		TNModel.viewProp(train);
 	}
 }
