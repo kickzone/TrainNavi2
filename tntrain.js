@@ -97,7 +97,7 @@ var TNTrain = function(line, text){
 	this.currentRoute = this.routes[0];
 
 	//加減速にかかる時間(秒) デフォルトは60秒
-	this.accTime = 60;
+	this.accTime = 30;
 	this.decTime = 60;
 
 	//現在時速(km/h)
@@ -236,7 +236,9 @@ TNTrain.prototype = {
 		var decTime = this.decTime;
 
 		//終点が通過駅
-		if(this.passage == 1 && route == this.routes[this.routes.length-1]) decTime = 0;
+		if(this.passage == 1 && route == this.routes[this.routes.length-1]){
+			decTime = 0;
+		}
 		//始点が通過駅
 		if(this.passage == 2 && route == this.routes[0]) accTime = 0;
 
@@ -270,14 +272,14 @@ TNTrain.prototype = {
 
 			//最高速(km/s)を求める
 			var Vmax = distance / (timeReq - accTime/2 - decTime/2);
-			if(this.accTime >= current)
+			if(accTime >= current)
 			{
 				//加速中
 				this.velocity = Vmax * current / accTime * 3600;
 				var ret = Vmax / accTime * current * current / 2;
 				return route.startStation.kilo + ret;
 			}
-			else if(timeReq - this.decTime >= current)
+			else if(timeReq - decTime >= current)
 			{
 				//最高速運転中
 				this.velocity = Vmax * 3600;
@@ -379,7 +381,8 @@ TNTrain.prototype = {
 		{
 			train = train.nextTrain;
 		}
-		return TNFuncs.getDestStr(train.routes[train.routes.length-1].endStation.stationName, TNView.destView);
+		if(train.terminal) return TNFuncs.getDestStr(train.terminal, TNView.destView);
+		else return TNFuncs.getDestStr(train.routes[train.routes.length-1].endStation.stationName, TNView.destView);
 	},
 	//プロパティ表示用の文字列作成
 	viewPropStr : function(){
@@ -418,9 +421,17 @@ TNTrain.prototype = {
 
 		//次の駅まで
 		train = this;
-		retStr += "次は" + this.currentRoute.endStation.stationName;
-		var span = this.currentRoute.endTime - currentTime;
-		var spanM = Math.ceil(span/60/1000);
+		var span, spanM;
+		if(train.nextTrain && train.passage == 1 && train.currentRoute == train.routes[train.routes.length-1]){
+			retStr += "次は" + train.nextTrain.routes[0].endStation.stationName;
+			span = train.nextTrain.routes[0].endTime - currentTime;
+			spanM = Math.ceil(span/60/1000);
+		}else{
+			retStr += "次は" + train.currentRoute.endStation.stationName;
+			span = this.currentRoute.endTime - currentTime;
+			spanM = Math.ceil(span/60/1000);
+		}
+
 		retStr += " " + spanM + "分で到着\n";
 
 		//終点までの所要時間
@@ -429,14 +440,16 @@ TNTrain.prototype = {
 			span = train.routes[train.routes.length-1].endTime - currentTime;
 			spanM = Math.ceil(span/60/1000);
 			//次の駅=終点だったら省略
-			if(train.routes[train.routes.length-1].endStation != this.currentRoute.endStation){
-				retStr += train.routes[train.routes.length-1].endStation.stationName + "まで" + spanM + "分 \n";
+			//通過駅も省略
+			if(train.routes[train.routes.length-1].endStation != this.currentRoute.endStation
+					&& train.passage != 1){
+				retStr += train.routes[train.routes.length-1].endStation.stationName + "まで" + spanM + "分 ";
 			}
 			train = train.nextTrain;
 		}
 
 		//現在速度
-		retStr += "現在速度 " + Math.abs(this.velocity).toFixed(2) + "km/h\n";
+		retStr += "\n現在速度 " + Math.abs(this.velocity).toFixed(2) + "km/h\n";
 
 		//表定速度
 		retStr += "表定速度 ";

@@ -91,6 +91,11 @@ var TNFuncs = (function(){
 			if(str == "京王八王子") return "八";
 			if(str == "京王多摩センター") return "多";
 			if(str == "東葉勝田台") return "葉";
+			if(str == "小手指") return "指";
+			if(str == "西武秩父") return "秩";
+			if(str == "西武球場前") return "球";
+			if(str == "新木場") return "木";
+			
 
 			return str.charAt(0);
 		}

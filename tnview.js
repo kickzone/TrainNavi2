@@ -68,14 +68,22 @@ var TNView = (function(cj){
 
 		//XY係数を算出
 		//すべての駅が収まるsizeにする
-		var scaleTry, coefTry;
-		for(scaleTry = 1; scaleTry < 1024; scaleTry *= 2){
-			coefTry = TNFuncs.calcCoefXY(latitude_base, scaleTry);
-			if((maxLat - minLat) * coefTry.X <= width
-				&& (maxLon - minLon) * coefTry.Y <= height) break;
+		//2014/12/14 2回目以降はscaleを保持する
+		if(!coef)
+		{
+			var scaleTry, coefTry;
+			for(scaleTry = 1; scaleTry < 1024; scaleTry *= 2){
+				coefTry = TNFuncs.calcCoefXY(latitude_base, scaleTry);
+				if((maxLat - minLat) * coefTry.X <= width
+					&& (maxLon - minLon) * coefTry.Y <= height) break;
+			}
+			scale = scaleTry;
+			coef = coefTry;
+		} else{
+			coef = TNFuncs.calcCoefXY(latitude_base, scale);
+			relX = 0;
+			relY = 0;
 		}
-		scale = scaleTry;
-		coef = coefTry;
 	}
 
 	//線路のオブジェクトを作成
@@ -126,6 +134,7 @@ var TNView = (function(cj){
 		coef = TNFuncs.calcCoefXY(latitude_base, scale);
 		DrawLines();
 		MoveObjects();
+		stage.update();
 	}
 
 	//列車を描画

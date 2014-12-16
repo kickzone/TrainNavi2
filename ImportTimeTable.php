@@ -112,8 +112,9 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 
 		$stationFirstNode = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$stationFirstArr = SplitItem($stationFirstNode->plaintext);
-		$currentLine = SelectLine($stationFirstArr[0], $dom, $mysqli, $currentTrain->trainKind);
-		$currentStationName = $stationFirstArr[0];
+		$stationName = ModifyStationName($stationFirstArr[0], $currentTrain->lineName);
+		$currentLine = SelectLine($stationName, $dom, $mysqli, $currentTrain->trainKind);
+		$currentStationName = $stationName;
 
 		$kindChanged = false;
 		$nameChanged = false;
@@ -154,6 +155,9 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 		break;
 	}
 
+	//東急大井町線など、種類名を変更する場合
+	$currentTrain->trainKind = SpecialKindChange($currentTrain->lineName, $currentTrain->trainKind, $dom);
+
 	//経路情報をゲットしていく
 	$route = new Route();
 	$trainNameTable = array();
@@ -182,7 +186,14 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 			{
 				$trainRangeKind[0] = ModifyStationName($trainRangeKind[0], $currentLine);
 				$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
-				if($beforeStationName == $trainRangeKind[1]) $kindChanged = true;
+				if($beforeStationName == $trainRangeKind[1]){
+					//TJライナー→(料金不要)ＴＪライナーの場合の特別対処
+					if(strpos($aTrainKinds[$kindCount*2+1], "ＴＪライナー") !== FALSE){
+
+					}else{
+						$kindChanged = true;
+					}
+				}
 			}
 			if($trainRangeName != null)
 			{
@@ -190,7 +201,7 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 				$trainRangeName[1] = ModifyStationName($trainRangeName[1], $currentLine);
 				if($beforeStationName == $trainRangeName[1]) $nameChanged = true;
 			}
-			$special = SpecialChange($beforeStationName, $currentTrain->lineName, $currentTrain->trainKind);
+			$special = SpecialChange($beforeStationName, $currentTrain->lineName, $currentTrain->trainKind, $dom);
 			if($result->num_rows==0 || $special != "")
 			{
 				//路線が変わった
@@ -235,6 +246,9 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 					//前のTrainの情報をコピー
 					$newTrain->trainKind = $currentTrain->trainKind;
 				}
+
+				//東急大井町線など、種類名を変更する場合
+				$newTrain->trainKind = SpecialKindChange($newTrain->lineName, $newTrain->trainKind, $dom);
 
 				if($nameChanged)
 				{
@@ -442,10 +456,10 @@ function SelectLine($stationName, $dom, $mysqli, $trainKind)
 	{
 		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$currentStation = preg_split('/\s/', $station->plaintext, -1, PREG_SPLIT_NO_EMPTY);
+		$currentStation[0] = ModifyStationName($currentStation[0], "");
 		if($stationName == $currentStation[0]) $start = true;
 		if($start)
 		{
-			$currentStation[0] = ModifyStationName($currentStation[0], "");
 			$currentStationName = $currentStation[0];
 			$query = "SELECT linename FROM tnstation WHERE stationname like '%$currentStationName'";
 			$result = ExecQuery($mysqli, $query);
@@ -506,6 +520,12 @@ function SelectLine($stationName, $dom, $mysqli, $trainKind)
 			}
 		}
 	}
+	//有楽町線、和光市→池袋行特別対処
+	if(count($possibleLines) == 2 && $lineName == ""){
+		if(array_search("東京メトロ有楽町線", $possibleLines) !== FALSE && array_search("東京メトロ副都心線", $possibleLines) !== FALSE){
+			return "東京メトロ有楽町線";
+		}
+	}
 	return $lineName;
 }
 
@@ -534,6 +554,16 @@ function ModifyStationName($currentStation, $lineName)
 					"霞ヶ関" => "霞ケ関", //東京メトロの霞ケ関の「ケ」は正確には大文字らしい
 			);
 			break;
+		case "東京メトロ日比谷線":
+				$modifyList = array(
+				"霞ヶ関" => "霞ケ関", //東京メトロの霞ケ関の「ケ」は正確には大文字らしい
+				);
+				break;
+		case "東京メトロ有楽町線":
+			$modifyList = array(
+			"市ヶ谷" => "市ケ谷", //東京メトロの霞ケ関の「ケ」は正確には大文字らしい
+			);
+					break;
 		case "小田急小田原線":
 			$modifyList = array(
 					"壓c" => "螢田" //何故か文字化けしている
@@ -568,7 +598,9 @@ function ModifyStationName($currentStation, $lineName)
 			$modifyList = array(
 					"壓c" => "螢田", //何故か文字化けしている
 					"阿佐ヶ谷" => "阿佐ケ谷",
-					"千駄ヶ谷" => "千駄ケ谷"
+					"千駄ヶ谷" => "千駄ケ谷",
+					"明治神宮前" => "明治神宮前〈原宿〉",
+					"市ヶ谷" => "市ケ谷", //東京メトロのときだけ有効にすること 有楽町線に市ケ谷始発がある
 			);
 			break;
 	}
@@ -668,7 +700,7 @@ function CalcPassageTime($mysqli, $beforeLine, $beforeStation, $beforeTime, $pas
 }
 
 //通常の乗り入れ判断では処理できないものをまとめる
-function SpecialChange($stationName, $currentLineName, $trainKind)
+function SpecialChange($stationName, $currentLineName, $trainKind, $dom)
 {
 	if($stationName == "中野"){
 		if($currentLineName == "東京メトロ東西線"){
@@ -685,7 +717,79 @@ function SpecialChange($stationName, $currentLineName, $trainKind)
 			return "中央・総武緩行線";
 		}
 	}
+	if($stationName == "溝の口" && $currentLineName == "東急田園都市線"){
+		if(ExistStation($dom, "上野毛")){
+			return "東急大井町線";
+		}
+	}
+	if($stationName == "押上" && $currentLineName == "東京メトロ半蔵門線" && ExistStationAfter($dom, "北千住", "曳舟")){
+		return "東武伊勢崎線(押上連絡線)";
+	}
+	if($stationName == "曳舟" && $currentLineName == "東武伊勢崎線" && ExistStationAfter($dom, "錦糸町", "押上")){
+		return "東武伊勢崎線(押上連絡線)";
+	}
+	if($stationName == "横瀬" && $currentLineName == "西武秩父線" && ExistStationAfter($dom, "御花畑", "横瀬")){
+		return "西武秩父線(秩鉄連絡線)";
+	}
+	if($stationName == "西武秩父" && $currentLineName == "西武秩父線" && ExistStationAfter($dom, "影森", "西武秩父")){
+		return "秩父鉄道(西武連絡線)";
+	}
+	if($stationName == "御花畑" && $currentLineName == "秩父鉄道" && ExistStationAfter($dom, "横瀬", "御花畑")){
+		return "西武秩父線(秩鉄連絡線)";
+	}
+	if($stationName == "影森" && $currentLineName == "秩父鉄道" && ExistStationAfter($dom, "西武秩父", "影森")){
+		return "秩父鉄道(西武連絡線)";
+	}
 	return "";
+}
+
+//大井町線など列車種類を変える
+function SpecialKindChange($currentLineName, $trainKind, $dom){
+	if($currentLineName == "東急大井町線" && $trainKind == "各停"){
+		foreach($dom->find('a[href*=station]') as $stationLink)
+		{
+			$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
+			$currentStation = SplitItem($station->plaintext);
+			$stationName = $currentStation[0];
+			if($stationName == "二子新地"){
+				//二子新地通過ならG各停
+				if($currentStation[1] == 'レ' || (count($currentStation) > 2 && $currentStation[2] == 'レ'))
+				{
+					return "G各停";
+				}else{
+					return "B各停";
+				}
+			}
+		}
+		return "G各停";
+	}
+	if($currentLineName == "東急田園都市線" && ($trainKind == "B各停" || $trainKind == "G各停")) return "各停";
+	return $trainKind;
+}
+
+//$domにある駅が存在するかどうか調べる
+function ExistStation($dom, $target){
+	foreach($dom->find('a[href*=station]') as $stationLink)
+	{
+		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
+		$currentStation = SplitItem($station->plaintext);
+		$stationName = $currentStation[0];
+		if($stationName == $target) return true;
+	}
+	return false;
+}
+
+function ExistStationAfter($dom, $target, $after){
+	$bAfter = false;
+	foreach($dom->find('a[href*=station]') as $stationLink)
+	{
+		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
+		$currentStation = SplitItem($station->plaintext);
+		$stationName = $currentStation[0];
+		if($bAfter && $stationName == $target) return true;
+		if($after == $stationName) $bAfter = true;
+	}
+	return false;
 }
 
 //中央快速線など、htmlからゲットした時刻が信用できない場合の対処

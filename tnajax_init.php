@@ -62,7 +62,7 @@ for($i=0; $i<count($lines); $i++)
 		$stationIDListSub = array();
 		while($row = $result->fetch_assoc())
 		{
-			$ret .= "$currentStationID,".$row['stationname'].",".$row['kilo'].",".$row['latitude'].",".$row['longitude']."\n";
+			$ret .= "$currentStationID,".$row['stationname'].",".$row['kilo'].",".$row['latitude'].",".$row['longitude'].",".$row['address']."\n";
 			$stationIDListSub[$row['stationname']] = $currentStationID;
 			$currentStationID++;
 		}

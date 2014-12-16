@@ -68,6 +68,8 @@ canvas {  }
 <div id="prop"></div><BR>
 <div class="cpanel">
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
+<BR>
+<input type="checkbox" id="useNow">現在時刻から開始
 <br>
 <input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
 <input type="radio" id="holiday" name="service" value="2">休日ダイヤ
@@ -86,6 +88,9 @@ canvas {  }
 </canvas>
 </div>
 <P>履歴</P>
+<P>2014/12/16 細かいバグを多数修正、路線大量追加(東京メトロ有楽町線、副都心線、東急東横線、みなとみらい線、西武有楽町線、池袋線、山口線、狭山線、秩父線、東武東上線、越生線、伊勢崎線、日光線)</P>
+<P>2014/12/14 再読み込み時に位置を中心点にセットし直し、倍率は維持するようにした。「現在時刻から開始」を追加した。</P>
+<P>2014/12/10 東急田園都市線、大井町線、東京メトロ半蔵門線、日比谷線追加</P>
 <P>2014/12/07 列車をゲットする論理変更、走行中の列車をすべて表示できるようにした。列車をクリックするとその列車の情報を表示する機能、自動画面スクロールする機能を追加した。</P>
 <P>2014/12/05 路線間通過電車に対応(データはない)、中央・総武緩行線、東京メトロ東西線、東葉高速線、京王井の頭線、大雄山線追加</P>
 <P>2014/12/03 線路が消える不具合などデバッグ、一定以上拡大したら駅名を表示する、中央快速線・青梅線・五日市線のDB追加</P>
@@ -113,10 +118,12 @@ function Start()
 	var speed = $("#speed").val();
 	var fps =  $("#fps").val();
 	var startTime = new Date();
-	startTime.setHours(parseInt(startHour));
-	startTime.setMinutes(parseInt(startMinute));
-	startTime.setSeconds(0);
-	startTime.setMilliseconds(0);
+	if(!$("#useNow").prop('checked')){
+		startTime.setHours(parseInt(startHour));
+		startTime.setMinutes(parseInt(startMinute));
+		startTime.setSeconds(0);
+		startTime.setMilliseconds(0);
+	}
 
 	//サイズ変更
 	var sizeOpt = parseInt($("input[name='size']:checked").val());

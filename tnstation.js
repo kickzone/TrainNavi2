@@ -8,6 +8,7 @@ var TNStation = function(line, text){
 	this.kilo = parseFloat(elements[2]);
 	this.latitude = parseFloat(elements[3]);
 	this.longitude = parseFloat(elements[4]);
+	this.address = elements[5];
 
 	//初期位置、係数
 	this.absX = 0;
@@ -42,7 +43,7 @@ var TNStation = function(line, text){
 TNStation.prototype = {
 	makeObject : function(cj, stage, absX, absY, scale){
 		if(this.shape){
-			stage.removeChild(this.shape);
+			if(this.scale <= 64.0) stage.removeChild(this.shape);
 			if(this.scale <= 16.0) stage.removeChild(this.shapeEkimei);
 			this.shape = null;
 		} else {
@@ -63,7 +64,7 @@ TNStation.prototype = {
 		//stageに追加
 		//2014/11/30 画面上にある場合のみ
 		if(this.inCanvas()){
-			stage.addChild(sha);
+			if(this.scale <= 64.0) stage.addChild(sha);
 			if(this.scale <= 16.0) stage.addChild(shaEki);
 			this.onStage = true;
 		}
@@ -137,7 +138,7 @@ TNStation.prototype = {
 			else if(!train.isNobori && this.pKudari) p = this.pKudari;
 			else
 			{
-				if(railPrev == null)
+				if(railNext == null)
 				{
 					var test = 0;
 					test = 1;
@@ -173,13 +174,13 @@ TNStation.prototype = {
 		//shapeが画面上から消える場合はstageから消す
 		if(this.onStage){
 			if(!this.inCanvas()){
-				this.stage.removeChild(this.shape);
+				if(this.scale <= 64.0) this.stage.removeChild(this.shape);
 				if(this.scale >= 16.0) this.stage.removeChild(this.shapeEkimei);
 				this.onStage = false;
 			}
 		} else{
 			if(this.inCanvas()){
-				this.stage.addChild(this.shape);
+				if(this.scale <= 64.0) this.stage.addChild(this.shape);
 				if(this.scale <= 16.0) this.stage.addChild(this.shapeEkimei)
 				this.onStage = true;
 			}

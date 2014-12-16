@@ -1,12 +1,13 @@
 <?php
 require_once 'funcs.php';
 
-function ExportPackage($fileName, $lines, $options)
+function ExportPackage($fileNameBase, $lines, $options)
 {
 	$lineIDList = array();
 	$trainKindList = array();
 	$stationIDList = array();
 
+	$fileName = $fileNameBase . "_static.tn";
 	$fp = fopen($fileName, "w");
 	fwrite($fp, "[line]\n");
 
@@ -60,7 +61,7 @@ function ExportPackage($fileName, $lines, $options)
 			$stationIDListSub = array();
 			while($row = $result->fetch_assoc())
 			{
-				fwrite($fp, "$currentStationID,".$row['stationname'].",".$row['kilo'].",".$row['latitude'].",".$row['longitude']."\n");
+				fwrite($fp, "$currentStationID,".$row['stationname'].",".$row['kilo'].",".$row['latitude'].",".$row['longitude'].",".$row['address']."\n");
 				$stationIDListSub[$row['stationname']] = $currentStationID;
 				$currentStationID++;
 			}
@@ -83,26 +84,29 @@ function ExportPackage($fileName, $lines, $options)
 			}
 		}
 	}
+	fclose($fp);
+
 	//列車一覧
-	fwrite($fp, "[train]\r\n");
 	for($i=0; $i<count($lines); $i++)
 	{
+		$fileName = sprintf("%s_train%02d.tn", $fileNameBase, $i+1);
+		$fp = fopen($fileName, "w");
 		$query = "SELECT * FROM tntrain WHERE linename='$lines[$i]'";
 		$result = ExecQuery($mysqli, $query);
 		if($result->num_rows > 0)
 		{
 			$lineID = $lineIDList[$lines[$i]];
-			fwrite($fp, "-$lineID,$lines[$i]\n");
+			//fwrite($fp, "-$lineID,$lines[$i]\n");
 			$trainKindListSub = $trainKindList[$lineID];
 			$stationIDListSub = $stationIDList[$lineID];
 			while($row = $result->fetch_assoc())
 			{
-				fwrite($fp, MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub));
+				fwrite($fp, MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub, $row['service']));
 				fwrite($fp, "\n");
 			}
 		}
+		fclose($fp);
 	}
-	fclose($fp);
 }
 
 //列車1台分1行のテキストを得る
@@ -133,6 +137,21 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 				}
 				else if(strpos($row['trainkind'], "ホームライナー") !== FALSE){
 					$trainkind = $trainKindListSub["ホームライナー"];
+				}
+				else if(strpos($row['trainkind'], "ＴＪライナー") !== FALSE){
+					$trainkind = $trainKindListSub["TJライナー"];
+				}
+				else if(strpos($row['trainkind'], "特急きぬ") !== FALSE || strpos($row['trainkind'], "特急けごん") !== FALSE || strpos($row['trainkind'], "スカイツリートレイン") !== FALSE ){
+					$trainkind = $trainKindListSub["特急スペーシア"];
+				}
+				else if(strpos($row['trainkind'], "特急しもつけ") !== FALSE || strpos($row['trainkind'], "特急きりふり") !== FALSE || strpos($row['trainkind'], "特急ゆのさと") !== FALSE){
+					$trainkind = $trainKindListSub["特急しもつけ"];
+				}
+				else if(strpos($row['trainkind'], "特急りょうもう") !== FALSE){
+					$trainkind = $trainKindListSub["特急りょうもう"];
+				}
+				else if(strpos($row['trainkind'], "マウントエクスプレス") !== FALSE){
+					$trainkind = $trainKindListSub["快速"];
 				}
 				else{
 					//複雑なものは特急だろう

@@ -22,6 +22,12 @@ var TNDb = (function(){
 	//オプション
 	var options = {};
 
+	//パッケージ用
+	//zipファイルを開いたとき、全列車の開始時刻・終了時刻をキャッシュしておく
+	var trainStartTimes = [];
+	var trainEndTimes = [];
+	var trainServices = [];
+
 	//読み込み済み列車一覧の配列を作成する
 	function makeLoadedTrainsList(trains)
 	{

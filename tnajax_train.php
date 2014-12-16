@@ -162,6 +162,8 @@ for($i=0; $i<count($lines); $i++)
 	if(count($toLoadTrainListSub) == 0) continue;
 
 	$lineID = $lineIDList[$lines[$i]];
+	if(!array_key_exists($lineID, $trainKindList)) continue;
+
 	$ret .=  "-$lineID,$lines[$i]\n";
 	$trainKindListSub = $trainKindList[$lineID];
 	$stationIDListSub = $stationIDList[$lineID];

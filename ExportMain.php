@@ -5,7 +5,7 @@ require_once 'ExportPackage.php';
 
 //初期値
 $message = "";
-$tbFileName = 'C:\\pleiades\\xampp\\htdocs\\TrainNavi2\\package.tn';
+$tbFileName = 'C:\\pleiades\\xampp\\htdocs\\TrainNavi2\\package';
 $tbTest = '';
 
 if (isset($_POST["exec"])) {

@@ -185,7 +185,7 @@ var TNModel = (function(){
 							trainInPool.nextTrain = train;
 							train.prevTrain = trainInPool;
 							//2014/12/02 直通前後で1秒も止まらない場合に対処
-							if(trainInPool.routes[trainInPool.routes.length-1].endTime.getTime() == train.routes[0].startTime.getTime())
+							if(trainInPool.routes[trainInPool.routes.length-1].endTime.getTime() == train.routes[0].startTime.getTime() && trainInPool.passage != 1)
 							{
 								trainInPool.routes[trainInPool.routes.length-1].endTime.setSeconds(-15);
 								train.routes[0].startTime.setSeconds(15);
@@ -197,7 +197,7 @@ var TNModel = (function(){
 							train.nextTrain = trainInPool;
 							trainInPool.prevTrain = train;
 							//2014/12/02 直通前後で1秒も止まらない場合に対処
-							if(train.routes[train.routes.length-1].endTime.getTime() == trainInPool.routes[0].startTime.getTime())
+							if(train.routes[train.routes.length-1].endTime.getTime() == trainInPool.routes[0].startTime.getTime() && train.passage != 1)
 							{
 								train.routes[train.routes.length-1].endTime.setSeconds(-15);
 								train.routes[0].startTime.setSeconds(15);
