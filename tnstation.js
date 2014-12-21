@@ -43,7 +43,7 @@ var TNStation = function(line, text){
 TNStation.prototype = {
 	makeObject : function(cj, stage, absX, absY, scale){
 		if(this.shape){
-			if(this.scale <= 64.0) stage.removeChild(this.shape);
+			if(this.scale <= 32.0) stage.removeChild(this.shape);
 			if(this.scale <= 16.0) stage.removeChild(this.shapeEkimei);
 			this.shape = null;
 		} else {
@@ -64,7 +64,7 @@ TNStation.prototype = {
 		//stageに追加
 		//2014/11/30 画面上にある場合のみ
 		if(this.inCanvas()){
-			if(this.scale <= 64.0) stage.addChild(sha);
+			if(this.scale <= 32.0) stage.addChild(sha);
 			if(this.scale <= 16.0) stage.addChild(shaEki);
 			this.onStage = true;
 		}
@@ -174,13 +174,13 @@ TNStation.prototype = {
 		//shapeが画面上から消える場合はstageから消す
 		if(this.onStage){
 			if(!this.inCanvas()){
-				if(this.scale <= 64.0) this.stage.removeChild(this.shape);
+				if(this.scale <= 32.0) this.stage.removeChild(this.shape);
 				if(this.scale >= 16.0) this.stage.removeChild(this.shapeEkimei);
 				this.onStage = false;
 			}
 		} else{
 			if(this.inCanvas()){
-				if(this.scale <= 64.0) this.stage.addChild(this.shape);
+				if(this.scale <= 32.0) this.stage.addChild(this.shape);
 				if(this.scale <= 16.0) this.stage.addChild(this.shapeEkimei)
 				this.onStage = true;
 			}

@@ -564,6 +564,12 @@ function ModifyStationName($currentStation, $lineName)
 			"市ヶ谷" => "市ケ谷", //東京メトロの霞ケ関の「ケ」は正確には大文字らしい
 			);
 					break;
+		case "東京メトロ丸ノ内線":
+			$modifyList = array(
+				"霞ヶ関" => "霞ケ関", //東京メトロの霞ケ関の「ケ」は正確には大文字らしい
+				"南阿佐ヶ谷" => "南阿佐ケ谷",
+				"䪉גJ" => "茗荷谷");
+				break;
 		case "小田急小田原線":
 			$modifyList = array(
 					"壓c" => "螢田" //何故か文字化けしている
@@ -601,6 +607,7 @@ function ModifyStationName($currentStation, $lineName)
 					"千駄ヶ谷" => "千駄ケ谷",
 					"明治神宮前" => "明治神宮前〈原宿〉",
 					"市ヶ谷" => "市ケ谷", //東京メトロのときだけ有効にすること 有楽町線に市ケ谷始発がある
+					"西ヶ原" => "西ケ原",
 			);
 			break;
 	}

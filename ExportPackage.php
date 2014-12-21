@@ -62,7 +62,13 @@ function ExportPackage($fileNameBase, $lines, $options)
 			while($row = $result->fetch_assoc())
 			{
 				fwrite($fp, "$currentStationID,".$row['stationname'].",".$row['kilo'].",".$row['latitude'].",".$row['longitude'].",".$row['address']."\n");
-				$stationIDListSub[$row['stationname']] = $currentStationID;
+				$stationTmp = $row['stationname'];
+				//2014/12/21 大江戸線、山手線対応のため、同一名称の駅に内部的に"2"をつけておく
+				//"3"はないよね
+				if(array_key_exists($stationTmp, $stationIDListSub)){
+					$stationTmp .= "2";
+				}
+				$stationIDListSub[$stationTmp] = $currentStationID;
 				$currentStationID++;
 			}
 			$stationIDList[$lineID] = $stationIDListSub;
@@ -201,6 +207,25 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 			if($passage == 2 || $passage == 3) $passage = 3;
 			else $passage = 1;
 		}
+
+		//2012/12/21 大江戸線、山手線など同一名称の駅が存在する場合の対処
+		//隣接している方を採用
+		$startStation2 = $startStation . "2";
+		$endStation2 = $endStation . "2";
+		if(array_key_exists($startStation, $stationIDListSub) && array_key_exists($startStation2 , $stationIDListSub)){
+			if(abs($stationIDListSub[$startStation2] - $stationIDListSub[$endStation])
+			 	< abs($stationIDListSub[$startStation] - $stationIDListSub[$endStation])){
+				$startStation = $startStation2;
+			}
+		}
+
+		if(array_key_exists($endStation, $stationIDListSub) && array_key_exists($endStation2 , $stationIDListSub)){
+			if(abs($stationIDListSub[$startStation] - $stationIDListSub[$endStation2])
+					< abs($stationIDListSub[$startStation] - $stationIDListSub[$endStation])){
+				$endStation = $endStation2;
+			}
+		}
+
 		$startStationID = $stationIDListSub[$startStation];
 		$endStationID = $stationIDListSub[$endStation];
 		$start = $row2['start'];

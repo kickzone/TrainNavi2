@@ -57,7 +57,13 @@ for($i=0; $i<count($lines); $i++)
 		$stationIDListSub = array();
 		while($row = $result->fetch_assoc())
 		{
-			$stationIDListSub[$row['stationname']] = $currentStationID;
+			$stationTmp = $row['stationname'];
+			//2014/12/21 大江戸線、山手線対応のため、同一名称の駅に内部的に"2"をつけておく
+			//"3"はないよね
+			if(array_key_exists($stationTmp, $stationIDListSub)){
+				$stationTmp .= "2";
+			}
+			$stationIDListSub[$stationTmp] = $currentStationID;
 			$currentStationID++;
 		}
 		$stationIDList[$lineID] = $stationIDListSub;
@@ -92,7 +98,7 @@ for($i=0; $i<count($lines); $i++)
 		while($row = $result->fetch_assoc())
 		{
 			//読み込み済みでない列車番号を追加
-			if(!in_array($row['trainname'], $loadedTrainList[$i]))
+			if(!in_array($row['trainname'], $loadedTrainList[$i]) && !in_array($row['trainname'], $toLoadTrainListSub))
 			{
 				$toLoadTrainListSub[] = $row['trainname'];
 			}
@@ -170,8 +176,12 @@ for($i=0; $i<count($lines); $i++)
 
 	$query = MakeTrainsSQL($lines[$i], $toLoadTrainListSub);
 	$result = ExecQuery($mysqli, $query);
+	$prevTrain = "";
 	while($row = $result->fetch_assoc())
 	{
+		//2012/12/21 重複レコードはスキップ
+		if($prevTrain == $row['trainname']) continue;
+		$prevTrain = $row['trainname'];
 		$ret .= MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationIDListSub, $_POST['Service']);
 		$ret .= "\n";
 	}

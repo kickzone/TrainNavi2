@@ -36,6 +36,18 @@ function DownloadFileList($folder, $url, $list)
 {
 	if(!file_exists($folder)) mkdir($folder);
 	$folder2 = basename($url, ".htm");
+	//2014/12/17 down_1_1 → down_1_01に変換
+	$pos = strrpos($folder2, "holi");
+	if($pos !== FALSE){
+		$folder2 = substr($folder2, 0, $pos-1);
+	}
+	$pos = strrpos($folder2, "_");
+	if($pos !== FALSE){
+		$subno = substr($folder2, $pos+1);
+		if(strlen($subno) == 1){
+			$folder2 = substr($folder2, 0, $pos+1) . "0" . $subno;
+		}
+	}
 	$subfolder = pathCombine($folder, $folder2);
 	if(!file_exists($subfolder)) mkdir($subfolder);
 	$ct = 1;
