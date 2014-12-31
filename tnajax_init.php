@@ -71,7 +71,7 @@ for($i=0; $i<count($lines); $i++)
 }
 
 //通過点一覧
-$ret .=  "[halfway]\r\n";
+$ret .=  "[halfway]\n";
 for($i=0; $i<count($lines); $i++)
 {
 	$query = "SELECT * FROM tnhalfway WHERE linename='$lines[$i]'";

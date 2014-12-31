@@ -75,7 +75,7 @@ function ExportPackage($fileNameBase, $lines, $options)
 		}
 	}
 	//通過点一覧
-	fwrite($fp, "[halfway]\r\n");
+	fwrite($fp, "[halfway]\n");
 	for($i=0; $i<count($lines); $i++)
 	{
 		$query = "SELECT * FROM tnhalfway WHERE linename='$lines[$i]'";
@@ -144,8 +144,23 @@ function MakeTrainText($mysqli, $row, $lineIDList, $trainKindListSub, $stationID
 				else if(strpos($row['trainkind'], "ホームライナー") !== FALSE){
 					$trainkind = $trainKindListSub["ホームライナー"];
 				}
+				else if(strpos($row['trainkind'], "スカイライナー") !== FALSE){
+					$trainkind = $trainKindListSub["スカイライナー"];
+				}
+				else if(strpos($row['trainkind'], "モーニングライナー") !== FALSE){
+					$trainkind = $trainKindListSub["モーニングライナー"];
+				}
+				else if(strpos($row['trainkind'], "イブニングライナー") !== FALSE){
+					$trainkind = $trainKindListSub["イブニングライナー"];
+				}
+				else if(strpos($row['trainkind'], "シティライナー") !== FALSE){
+					$trainkind = $trainKindListSub["シティライナー"];
+				}
 				else if(strpos($row['trainkind'], "ＴＪライナー") !== FALSE){
 					$trainkind = $trainKindListSub["TJライナー"];
+				}
+				else if(strpos($row['trainkind'], "京急ウィング") !== FALSE){
+					$trainkind = $trainKindListSub["京急ウィング号"];
 				}
 				else if(strpos($row['trainkind'], "特急きぬ") !== FALSE || strpos($row['trainkind'], "特急けごん") !== FALSE || strpos($row['trainkind'], "スカイツリートレイン") !== FALSE ){
 					$trainkind = $trainKindListSub["特急スペーシア"];

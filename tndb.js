@@ -70,7 +70,6 @@ var TNDb = (function(){
 
 	function readLinesFromDB()
 	{
-		$("#status").text("列車情報読み込み中...");
 		//路線、駅一覧などをゲット
 		//asyncにする必要はない
 		$.ajax({
@@ -95,11 +94,15 @@ var TNDb = (function(){
 					currentArr.push(retLines[i]);
 				}
 			}
-			$("#status").text("列車情報読み込み終了");
 		});
 	}
 
-	function readLinesFromPackage(fromTime, toTime, service, trains, callback)
+	function readLinesFromPackage()
+	{
+
+	}
+
+	function openPackageMain()
 	{
 
 	}
@@ -112,9 +115,10 @@ var TNDb = (function(){
 
 	//public
 	return{
-		setPackageFile : function(name)
+		openPackage : function(name)
 		{
 			packageFile = name;
+			openPackageMain();
 		},
 
 		addValidLines : function(line)

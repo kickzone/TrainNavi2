@@ -34,6 +34,7 @@ var TNView = (function(cj){
 	var scale = 16.0;
 
 	//各オブジェクト北緯・東経からx-y座標を求める際に掛ける係数
+	//単位は(ピクセル/度)
 	//var coefXY;
 	var coef;
 
@@ -49,6 +50,11 @@ var TNView = (function(cj){
 	//自動的に中央に寄せるオブジェクト
 	var centerObj = null;
 
+	var gmap = null;
+	var gmapRelX = 0;
+	var gmapRelY = 0;
+	var gmapMode = google.maps.MapTypeId.ROADMAP;
+	var scaleChanged = false;
 
 	function InitLatLon(){
 		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
@@ -90,13 +96,24 @@ var TNView = (function(cj){
 	function DrawLines(){
 		$.each(lines, function(i, line){
 			var beforePoint = null;
-			$.each(line.stations, function(j, station){
+			$.each(line.getSortedPoints(), function(j, station){
 				if(skinFile){
 
 				}else{
 					//緯度経度からの計算
-					var absX = (station.longitude - longitude_base) * coef.X + (width/2);
-					var absY = (latitude_base - station.latitude) * coef.Y + (height/2);
+					var absX, absY;
+					if(gmap)
+					{
+						var latLng = new google.maps.LatLng(station.latitude, station.longitude);
+						var point = TNFuncs.fromLatLngToPoint(latLng, gmap)
+						absX = point.x;
+						absY = point.y;
+
+					}else
+					{
+						absX = (station.longitude - longitude_base) * coef.X + (width/2);
+						absY = (latitude_base - station.latitude) * coef.Y + (height/2);
+					}
 					station.makeObject(cj, stage, absX, absY, scale);
 				}
 			});
@@ -105,9 +122,48 @@ var TNView = (function(cj){
 
 				}else{
 					//緯度経度からの計算
-					var x = (railroad.end.longitude - railroad.start.longitude) * coef.X;
-					var y = (railroad.start.latitude - railroad.end.latitude) * coef.Y;
+					//var x = (railroad.end.longitude - railroad.start.longitude) * coef.X;
+					//var y = (railroad.start.latitude - railroad.end.latitude) * coef.Y;
+					var x = railroad.end.absX - railroad.start.absX;
+					var y = railroad.end.absY - railroad.start.absY;
 					railroad.makeObject(cj, stage, x, y);
+				}
+			});
+		});
+	}
+
+	//線路のオブジェクトを作成
+	function ResetAbsXYLines(){
+		$.each(lines, function(i, line){
+			var beforePoint = null;
+			$.each(line.getSortedPoints(), function(j, station){
+				if(skinFile){
+
+				}else{
+					//緯度経度からの計算
+					var absX, absY;
+					if(gmap)
+					{
+						var latLng = new google.maps.LatLng(station.latitude, station.longitude);
+						var point = TNFuncs.fromLatLngToPoint(latLng, gmap)
+						absX = point.x;
+						absY = point.y;
+
+					}else
+					{
+						absX = (station.longitude - longitude_base) * coef.X + (width/2);
+						absY = (latitude_base - station.latitude) * coef.Y + (height/2);
+					}
+					station.absX = absX;
+					station.absY = absY;
+				}
+			});
+			$.each(line.railroads, function(j, railroad){
+				if(skinFile){
+
+				}else{
+					railroad.absX = railroad.start.absX;
+					railroad.absY = railroad.start.absY;
 				}
 			});
 		});
@@ -124,6 +180,19 @@ var TNView = (function(cj){
 				railroad.moveObject(relX, relY);
 			});
 		});
+
+		//googleマップ同期
+		if(gmap){
+			if(centerObj){
+				gmap.setCenter(new google.maps.LatLng(latitude_base + (relY / coef.Y), longitude_base + (relX / coef.X)));
+			}else{
+				if(gmapRelX != relX || gmapRelY != relY){
+					gmap.panBy(gmapRelX - relX, gmapRelY - relY);
+					gmapRelX = relX;
+					gmapRelY = relY;
+			}
+			}
+		}
 	}
 
 	//倍率変更
@@ -132,8 +201,13 @@ var TNView = (function(cj){
 		relY *= (scale / toScale);
 		scale = toScale;
 		coef = TNFuncs.calcCoefXY(latitude_base, scale);
-		DrawLines();
-		MoveObjects();
+		if(!gmap)
+		{
+			DrawLines();
+			MoveObjects();
+		}else{
+			scaleChanged = true;
+		}
 		stage.update();
 	}
 
@@ -240,9 +314,15 @@ var TNView = (function(cj){
 		});
 		if(centerObj){
 			//列車をクリックしたら、常に画面の中央に持ってくる
-			relX = width / 2 - centerObj.absX;
-			relY = height / 2 - centerObj.absY;
-			MoveObjects();
+			if(gmap){
+				var latlng = TNFuncs.fromPointToLatLng(new google.maps.Point(centerObj.absX + relX, centerObj.absY + relY), gmap);
+				gmap.panTo(latlng);
+				MoveLinesGmap();
+			}else{
+				relX = width / 2 - centerObj.absX;
+				relY = height / 2 - centerObj.absY;
+				MoveObjects();
+			}
 		}
 		stage.update();
 	}
@@ -265,14 +345,27 @@ var TNView = (function(cj){
 		dragEvents.currentY = evt.pageY;
 	}
 
+	//ダブルクリック、衛星表示と切り替え(暫定)
+	function OnCanvasDoubleClick(evt){
+		if(gmap){
+			if(gmapMode == google.maps.MapTypeId.ROADMAP){
+				gmap.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+			}else{
+				gmap.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+			}
+		}
+	}
+
 	//ドラッグ中
 	function OnCanvasMouseMove(evt){
 		if(dragEvents.onDrag){
 			//ドラッグしたら列車同期表示をやめる
 			centerObj = null;
 			if(dragEvents.currentX != evt.pageX || dragEvents.currentY != evt.pageY){
-				relX += (evt.pageX - dragEvents.currentX);
-				relY += (evt.pageY - dragEvents.currentY);
+				var deltaX = (evt.pageX - dragEvents.currentX);
+				var deltaY = (evt.pageY - dragEvents.currentY);
+				relX += deltaX;
+				relY += deltaY;
 				MoveObjects();
 				stage.update();
 				dragEvents.currentX = evt.pageX;
@@ -297,7 +390,46 @@ var TNView = (function(cj){
 		 }
 		SetScale(toScale);
 
+		//googleマップ同期
+		if(gmap){
+			gmap.setZoom(calcGmapZoom());
+		}
+
 		return false;
+	}
+
+	function calcGmapZoom(){
+		return 17-Math.log2(scale);
+	}
+
+
+	function MoveLinesGmap(){
+		if(scaleChanged){
+			ResetLines();
+			scaleChanged = false;
+			return;
+		}
+		var center = gmap.getCenter();
+		latitude_base = center.lat();
+    	longitude_base = center.lng();
+    	relX = 0;
+    	relY = 0;
+    	gmapRelX = 0;
+    	gmapRelY = 0;
+    	ResetAbsXYLines();
+		MoveObjects();
+	}
+
+	function ResetLines(){
+		var center = gmap.getCenter();
+		latitude_base = center.lat();
+    	longitude_base = center.lng();
+    	relX = 0;
+    	relY = 0;
+    	gmapRelX = 0;
+    	gmapRelY = 0;
+    	DrawLines();
+		MoveObjects();
 	}
 
 	//public
@@ -313,6 +445,7 @@ var TNView = (function(cj){
 			width = canvas.width;
 			height = canvas.height;
 			this.destView = option.dest;
+			gmap = null;
 			if(skinFile){
 
 			}else{
@@ -326,6 +459,7 @@ var TNView = (function(cj){
 
 			//二重にイベントが発生しないようにする
 			canvas.removeEventListener('mousedown', OnCanvasMouseDown, false);
+			canvas.removeEventListener('dblclick', OnCanvasDoubleClick, false);
 			canvas.removeEventListener('mousemove', OnCanvasMouseMove, false);
 			canvas.removeEventListener('mouseup', OnCanvasMouseUp, false);
 			canvas.removeEventListener("mousewheel" , OnCanvasMouseWheel, false);
@@ -334,6 +468,7 @@ var TNView = (function(cj){
 
 			//canvasのマウスイベントを作成
 			canvas.addEventListener('mousedown', OnCanvasMouseDown, false);
+			canvas.addEventListener('dblclick', OnCanvasDoubleClick, false);
 			canvas.addEventListener('mousemove', OnCanvasMouseMove, false);
 			canvas.addEventListener('mouseup', OnCanvasMouseUp, false);
 			canvas.addEventListener("mousewheel" , OnCanvasMouseWheel, false);
@@ -349,7 +484,19 @@ var TNView = (function(cj){
 		},
 		getCenterObj : function(){
 			return centerObj;
-		}
+		},
+		getGmapScale : function(){
+			return calcGmapZoom();
+		},
+		getCenterLatLon : function(){
+			var lat = latitude_base + (relY / coef.Y);
+			var lon = longitude_base + (relX / coef.X);
+			return {lat:lat, lon:lon};
+		},
+		setGmap : function(in_gmap){
+			gmap = in_gmap;
+			google.maps.event.addListener(gmap,'idle', ResetLines);
+		},
 	};
 
 })(createjs);

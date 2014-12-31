@@ -230,6 +230,7 @@ var TNModel = (function(){
 			startTime = option.startTime;
 			service = option.service;
 			this.viewProp(null);
+			$("#status").text("路線情報読み込み終了");
 			$("#prop").text("");
 		},
 		getLines : function(){
@@ -248,6 +249,7 @@ var TNModel = (function(){
 		},
 		//処理開始
 		start : function(){
+			$("#status").text("列車読み込み中...");
 			//開始時の列車情報読み込み
 			dbReadTime = new Date(startTime.getTime() + reloadSec * 1000 * speed * 2)
 			DB.readTrains(startTime, dbReadTime, service, trains, AddTrains);

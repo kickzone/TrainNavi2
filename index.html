@@ -1,35 +1,11 @@
-<?php
-
-require_once 'funcs.php';
-
-//路線一覧のHTMLを出力する
-function MakeListBox()
-{
-
-	$mysqli = OpenDb();
-	$query = "SELECT * FROM tnline";
-	$result = ExecQuery($mysqli, $query);
-
-	$retStr = "<select name=\"lineName[]\" size=\"5\" class=\"linelist\" multiple>";
-	while ($row = $result->fetch_assoc()) {
-		$retStr .= "<option ";
-		$retStr .= "value=\"" . $row["linename"] . "\">". $row["linename"]."</option>";
-	}
-	$retStr .= "</select>";
-
-	$mysqli->close();
-
-	return $retStr;
-}
-
-?>
-
 <!DOCTYPE HTML>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <script src="easeljs-0.7.1.min.js"></script>
 <script src="jquery-2.1.1.js"></script>
+<script src="jszip.min.js"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyD0yatKrc5_qjb9HrpTjMw49cinaIJfoLE&sensor=false"></script>
 <title>TrainNavi2</title>
 <style>
 .linelist{
@@ -52,24 +28,38 @@ function MakeListBox()
 #wrapper{
     height: auto;
     overflow: auto;
-    position: relative;
+    position: absolute;
     z-index: 1;
     width: 100%;
     height:100%;
     min-height:100%;
 }
 
+#googlemap{
+    height: auto;
+    overflow: auto;
+    position: absolute;
+    z-index: 0;
+ }
+
+ #history{
+    height: auto;
+    overflow: auto;
+    position: relative;
+    z-index: -1;
+ }
+
 canvas {  }
 
 </style>
 </head>
 <body>
-<div><?php echo MakeListBox() ?></div>
-<div id="prop"></div><BR>
+<div><select name="lineName[]" size="5" id="linelist" class="linelist" multiple></select></div>
+<div id="prop"></div>  パッケージファイル読み込み：<input type="file" id="package" name="package" /> <BR>
 <div class="cpanel">
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
 <BR>
-<input type="checkbox" id="useNow">現在時刻から開始
+<input type="checkbox" id="useNow">現在時刻から開始<input type="checkbox" id="useGmap">Googleマップと連携する
 <br>
 <input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
 <input type="radio" id="holiday" name="service" value="2">休日ダイヤ
@@ -87,7 +77,11 @@ canvas {  }
 <canvas>
 </canvas>
 </div>
+<div id="googlemap">
+</div>
+<div id="history">
 <P>履歴</P>
+<P>2014/12/29 トップをhtmlに変更してphpを追い出した。路線15追加(都営地下鉄浅草線、京急本線、空港線、久里浜線、逗子線、大師線、京成本線、押上線、千葉線、千原線、金町線、成田スカイアクセス・北総線、東成田線、芝山鉄道線、新京成線)</P>
 <P>2014/12/21 大江戸線などの同一駅が2回出現する環状線に対応、路線7つ追加(東京メトロ南北線、銀座線、丸ノ内線、都営地下鉄三田線、大江戸線、埼玉高速鉄道線、東急目黒線)</P>
 <P>2014/12/16 細かいバグを多数修正、路線13追加(東京メトロ有楽町線、副都心線、東急東横線、みなとみらい線、西武有楽町線、池袋線、山口線、狭山線、秩父線、東武東上線、越生線、伊勢崎線、日光線)</P>
 <P>2014/12/14 再読み込み時に位置を中心点にセットし直し、倍率は維持するようにした。「現在時刻から開始」を追加した。</P>
@@ -98,7 +92,8 @@ canvas {  }
 <P>2014/11/30 縦横縮尺率の変更、ドラッグによるスクロール・ホイールによる拡大縮小機能追加、画面上にないオブジェクトをcanvasに乗せないことで動作を軽量化、canvasのサイズ選択追加、京王線系統のDB追加</P>
 <P>2014/11/25 平日/休日ダイヤの切り替え、行先表示の省略・表示なし機能を追加、休日ダイヤを含めたDB拡充</P>
 <P>2014/11/24 行先表示に対応</P>
-<P>2014/11/23 初版</P>
+<P>2014/11/23 初版 小田急線系統のみ</P>
+</div>
 <script src="tnfuncs.js"></script>
 <script src="tnmodel.js"></script>
 <script src="tnview.js"></script>
@@ -110,6 +105,42 @@ canvas {  }
 <script src="tntrain.js"></script>
 <script src="tntrainkind.js"></script>
 <script>
+
+$(window).load(function () {
+    // ロード後に路線一覧を読み込む
+	if(location.href.indexOf("http://") == 0){
+		//サーバーにいる場合はDBから路線一覧を持ってくる
+		LoadLineFromDB();
+	}
+});
+
+document.getElementById("package").addEventListener('change', openPackage, false);
+
+
+function LoadLineFromDB()
+{
+	$('#linelist > option').remove();
+	$.ajax({
+		async: false,
+		type: "POST",
+		url: "tnajax_line.php"
+	}).done(function( msg ) {
+		var lines = msg.split(",");
+		$.each(lines, function(i, line){
+			$('#linelist').append($('<option>').html(line).val(line));
+		});
+	});
+}
+
+function openPackage(evt)
+{
+	var files = evt.target.files;
+	//TNDbに丸投げ
+	TNDb.openPackage(files[0]);
+	//路線一覧をゲット
+	var lines = TNDb.packageLines();
+}
+
 function Start()
 {
 	var aLineArr = [];
@@ -145,6 +176,17 @@ function Start()
 	canvas.width = sizeX;
 	canvas.height = sizeY;
 
+	var history = $("#history");
+	history.css("margin-top", sizeY + "px");
+
+	//Googleマップと連携
+	if($("#useGmap").prop('checked'))
+	{
+		var gmap = $("#googlemap");
+		gmap.css("width",sizeX);
+		gmap.css("height",sizeY);
+	}
+
 	var option = {
 		startTime : startTime,
 		speed : parseInt(speed),
@@ -156,6 +198,20 @@ function Start()
 		dest : parseInt($("input[name='dest']:checked").val()),
 	};
 	TNView.init(option);
+	//Googleマップ初期化
+	if($("#useGmap").prop('checked'))
+	{
+		var center = TNView.getCenterLatLon();
+	    var mapOptions = {
+	            center: new google.maps.LatLng(center.lat, center.lon),
+	            zoom: TNView.getGmapScale(),
+	            mapTypeId: google.maps.MapTypeId.ROADMAP
+	          };
+
+	    var map = new google.maps.Map(document.getElementById("googlemap"), mapOptions);
+	    TNView.setGmap(map);
+	}
+
 	TNModel.start();
 }
 </script>

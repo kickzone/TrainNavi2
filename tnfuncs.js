@@ -2,6 +2,9 @@
 var TNFuncs = (function(){
 
 	//private
+	var GMAP_COEFX = 0.835;
+	var GMAP_COEFY = 1.281;
+
 
 	//ベクトルの長さを計算
 	function norm(p){
@@ -79,6 +82,10 @@ var TNFuncs = (function(){
 		// 緯度１度あたりの長さ(m)
 		var arc_lng = (PI_ER * Math.cos(latRadian)) / (180 * Math.pow(TMP, 1/2));
 
+		//googlemapに適合させるための係数をかける
+		arc_lat *= GMAP_COEFX;
+		arc_lng *= GMAP_COEFY;
+
 		return {X : arc_lat / scale, Y : arc_lng / scale};
 	}
 
@@ -95,7 +102,14 @@ var TNFuncs = (function(){
 			if(str == "西武秩父") return "秩";
 			if(str == "西武球場前") return "球";
 			if(str == "新木場") return "木";
-			
+			if(str == "京成臼井") return "臼";
+			if(str == "京成佐倉") return "佐";
+			if(str == "京成津田沼") return "津";
+			if(str == "京急久里浜") return "久";
+			if(str == "京急川崎") return "川";
+			if(str == "京急久里浜") return "久";
+			if(str == "京成高砂") return "高";
+
 
 			return str.charAt(0);
 		}
@@ -107,13 +121,36 @@ var TNFuncs = (function(){
 		return !(xmin1 > xmax2 || ymin1 > ymax2 || xmax1 < xmin2 || ymax1 < ymin2)
 	}
 
+
+	//googlemapを使ったとき限定、latlng→実際の座標に変換する
+	function fromLatLngToPoint(latLng, map) {
+		var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+		var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+		var scale = Math.pow(2, map.getZoom());
+		var worldPoint = map.getProjection().fromLatLngToPoint(latLng);
+		return new google.maps.Point((worldPoint.x - bottomLeft.x) * scale, (worldPoint.y - topRight.y) * scale);
+	}
+
+	function fromPointToLatLng(point, map) {
+		var topRight = map.getProjection().fromLatLngToPoint(map.getBounds().getNorthEast());
+		var bottomLeft = map.getProjection().fromLatLngToPoint(map.getBounds().getSouthWest());
+		var scale = Math.pow(2, map.getZoom());
+		var worldPoint = new google.maps.Point(bottomLeft.x + point.x / scale, topRight.y + point.y / scale);
+		var latlng = map.getProjection().fromPointToLatLng(worldPoint);
+		return latlng;
+	}
+
 	//public
 	return{
 		calcBisectUnitVector: calcBisectUnitVector,
 		calcNormalUnitVector: calcNormalUnitVector,
 		getDestStr : getDestStr,
 		calcCoefXY : calcCoefXY,
-		isRectOverlapped : isRectOverlapped
+		GMAP_CoefX : GMAP_COEFX,
+		GMAP_CoefY : GMAP_COEFY,
+		isRectOverlapped : isRectOverlapped,
+		fromLatLngToPoint : fromLatLngToPoint,
+		fromPointToLatLng : fromPointToLatLng,
 	};
 
 

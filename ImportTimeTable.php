@@ -188,7 +188,9 @@ function ImportTimeTable($fileName, $csvTrain, $csvRoute, $lineName, $service)
 				$trainRangeKind[1] = ModifyStationName($trainRangeKind[1], $currentLine);
 				if($beforeStationName == $trainRangeKind[1]){
 					//TJライナー→(料金不要)ＴＪライナーの場合の特別対処
-					if(strpos($aTrainKinds[$kindCount*2+1], "ＴＪライナー") !== FALSE){
+					//2014/12/23 京急ウイング号も同様
+					if(strpos($aTrainKinds[$kindCount*2+1], "ＴＪライナー") !== FALSE
+						|| strpos($aTrainKinds[$kindCount*2+1], "京急ウィング") !== FALSE){
 
 					}else{
 						$kindChanged = true;
@@ -608,6 +610,8 @@ function ModifyStationName($currentStation, $lineName)
 					"明治神宮前" => "明治神宮前〈原宿〉",
 					"市ヶ谷" => "市ケ谷", //東京メトロのときだけ有効にすること 有楽町線に市ケ谷始発がある
 					"西ヶ原" => "西ケ原",
+					"空港第２ビル" => "空港第2ビル",
+					"ＹＲＰ野比" => "YRP野比"
 			);
 			break;
 	}
@@ -646,7 +650,13 @@ function ModifyTrainKind(&$kind, $lineName)
 {
 	$modifyList = array(
 		"私鉄無料急行" => "急行",
-		"私鉄無料特急" => "特急"
+		"私鉄無料特急" => "特急",
+		"エアポート快特(料金不要)" => "エアポート快特",
+		"快特(料金不要)" => "快特",
+		"エアポート急行(料金不要)" => "エアポート急行",
+		"特急(料金不要)" => "特急",
+		"アクセス特急(料金不要)" => "アクセス特急",
+		"通勤特急(料金不要)" => "通勤特急",
 	);
 
 
@@ -666,9 +676,9 @@ function CalcPassageTime($mysqli, $beforeLine, $beforeStation, $beforeTime, $pas
 	{
 		$station = $stationLink->parentNode()->parentNode()->parentNode()->parentNode();
 		$currentStation = SplitItem($station->plaintext);
-		if($bExistBeforeStation) ModifyStationName($currentStation[0], $afterLine);
-		else ModifyStationName($currentStation[0], $beforeLine);
-		$stationName = $currentStation[0];
+		if($bExistBeforeStation) $stationName = ModifyStationName($currentStation[0], $afterLine);
+		else $stationName = ModifyStationName($currentStation[0], $beforeLine);
+		//$stationName = $currentStation[0];
 		if($stationName == $beforeStation)
 		{
 			$bExistBeforeStation = true;
@@ -747,6 +757,15 @@ function SpecialChange($stationName, $currentLineName, $trainKind, $dom)
 	if($stationName == "影森" && $currentLineName == "秩父鉄道" && ExistStationAfter($dom, "西武秩父", "影森")){
 		return "秩父鉄道(西武連絡線)";
 	}
+	if($stationName == "東成田" && $currentLineName == "芝山鉄道線"){
+		return "京成東成田線";
+	}
+
+	if($stationName == "京成成田" && $currentLineName == "京成本線" && ExistStationAfter($dom, "東成田", "京成成田") ){
+		return "京成東成田線";
+	}
+
+
 	return "";
 }
 
