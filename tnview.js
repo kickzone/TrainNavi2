@@ -349,10 +349,11 @@ var TNView = (function(cj){
 	function OnCanvasDoubleClick(evt){
 		if(gmap){
 			if(gmapMode == google.maps.MapTypeId.ROADMAP){
-				gmap.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+				gmapMode = google.maps.MapTypeId.SATELLITE;
 			}else{
-				gmap.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+				gmapMode = google.maps.MapTypeId.ROADMAP;
 			}
+			gmap.setMapTypeId(gmapMode);
 		}
 	}
 
