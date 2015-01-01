@@ -56,6 +56,8 @@ var TNView = (function(cj){
 	var gmapMode = google.maps.MapTypeId.ROADMAP;
 	var scaleChanged = false;
 
+	var editMode = false;
+
 	function InitLatLon(){
 		//すべての駅・中継点の座標からmaxとminを算出し、係数と基準値を算出
 		var minLat = 180, maxLat = 0, minLon = 360, maxLon = 0;
@@ -433,6 +435,30 @@ var TNView = (function(cj){
 		MoveObjects();
 	}
 
+	function RemoveEvents(){
+		canvas.removeEventListener('mousedown', OnCanvasMouseDown, false);
+		canvas.removeEventListener('dblclick', OnCanvasDoubleClick, false);
+		canvas.removeEventListener('mousemove', OnCanvasMouseMove, false);
+		canvas.removeEventListener('mouseup', OnCanvasMouseUp, false);
+		canvas.removeEventListener("mousewheel", OnCanvasMouseWheel, false);
+		var mousewheelevent = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
+		$("canvas").off(mousewheelevent, OnCanvasMouseWheel);
+	}
+
+	function ResetEvents(){
+		//二重にイベントが発生しないようにする
+		RemoveEvents();
+
+		//canvasのマウスイベントを作成
+		canvas.addEventListener('mousedown', OnCanvasMouseDown, false);
+		canvas.addEventListener('dblclick', OnCanvasDoubleClick, false);
+		canvas.addEventListener('mousemove', OnCanvasMouseMove, false);
+		canvas.addEventListener('mouseup', OnCanvasMouseUp, false);
+		canvas.addEventListener("mousewheel", OnCanvasMouseWheel, false);
+		var mousewheelevent = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
+		$("canvas").on(mousewheelevent, OnCanvasMouseWheel);
+	}
+
 	//public
 	return{
 		//初期化
@@ -447,6 +473,8 @@ var TNView = (function(cj){
 			height = canvas.height;
 			this.destView = option.dest;
 			gmap = null;
+			editMode = option.editMode;
+
 			if(skinFile){
 
 			}else{
@@ -458,22 +486,8 @@ var TNView = (function(cj){
 			MoveObjects();
 			stage.update();
 
-			//二重にイベントが発生しないようにする
-			canvas.removeEventListener('mousedown', OnCanvasMouseDown, false);
-			canvas.removeEventListener('dblclick', OnCanvasDoubleClick, false);
-			canvas.removeEventListener('mousemove', OnCanvasMouseMove, false);
-			canvas.removeEventListener('mouseup', OnCanvasMouseUp, false);
-			canvas.removeEventListener("mousewheel" , OnCanvasMouseWheel, false);
-			var mousewheelevent = 'onwheel' in document ? 'wheel' : 'onmousewheel' in document ? 'mousewheel' : 'DOMMouseScroll';
-			$("canvas").off(mousewheelevent, OnCanvasMouseWheel);
+			ResetEvents();
 
-			//canvasのマウスイベントを作成
-			canvas.addEventListener('mousedown', OnCanvasMouseDown, false);
-			canvas.addEventListener('dblclick', OnCanvasDoubleClick, false);
-			canvas.addEventListener('mousemove', OnCanvasMouseMove, false);
-			canvas.addEventListener('mouseup', OnCanvasMouseUp, false);
-			canvas.addEventListener("mousewheel" , OnCanvasMouseWheel, false);
-			$("canvas").on(mousewheelevent, OnCanvasMouseWheel);
 		},
 		drawTrains : function(){
 			DrawTrains();
@@ -498,6 +512,14 @@ var TNView = (function(cj){
 			gmap = in_gmap;
 			google.maps.event.addListener(gmap,'idle', ResetLines);
 		},
+		getGmap : function(){
+			return gmap;
+		},
+		getEditMode : function(){return editMode;},
+		getScale : function(){return scale;},
+		resetEvents : ResetEvents,
+		removeEvents : RemoveEvents,
+		getRelativePos : function(){return {x:relX, y:relY};},
 	};
 
 })(createjs);

@@ -115,6 +115,53 @@ var TNModel = (function(){
 				}
 				beforePoint = point;
 			});
+			//halfwayのkiloを再設定
+			$.each(line.halfways, function(j, halfway){
+				var startStation = halfway, endStation = halfway;
+				while(startStation){
+					startStation = startStation.prevPoint;
+					if(line.stations.indexOf(startStation) != -1) break;
+				}
+				while(endStation){
+					endStation = endStation.nextPoint;
+					if(line.stations.indexOf(endStation) != -1) break;
+				}
+				var thisDistance = 0, allDistance = 0;
+				var point = startStation;
+				while(point != endStation){
+					var distance = point.nextRail.calcDistance();
+					allDistance += distance;
+					point = point.nextPoint;
+					if(point == halfway) thisDistance = allDistance;
+				}
+				halfway.kilo = startStation.kilo + (endStation.kilo - startStation.kilo) * (thisDistance / allDistance);
+			});
+		});
+		RecalcHalfwayKilo();
+	}
+	//halfwayのkiloを再設定
+	function RecalcHalfwayKilo(){
+		$.each(lines, function(i, line){
+			$.each(line.halfways, function(j, halfway){
+				var startStation = halfway, endStation = halfway;
+				while(startStation){
+					startStation = startStation.prevPoint;
+					if(line.stations.indexOf(startStation) != -1) break;
+				}
+				while(endStation){
+					endStation = endStation.nextPoint;
+					if(line.stations.indexOf(endStation) != -1) break;
+				}
+				var thisDistance = 0, allDistance = 0;
+				var point = startStation;
+				while(point != endStation){
+					var distance = point.nextRail.calcDistance();
+					allDistance += distance;
+					point = point.nextPoint;
+					if(point == halfway) thisDistance = allDistance;
+				}
+				halfway.kilo = startStation.kilo + (endStation.kilo - startStation.kilo) * (thisDistance / allDistance);
+			});
 		});
 	}
 
@@ -275,7 +322,8 @@ var TNModel = (function(){
 		viewProp : function(obj){
 			propObj = obj;
 			TNView.setCenterObj(obj);
-		}
+		},
+		recalcHalfwayKilo : RecalcHalfwayKilo,
 	};
 
 })();

@@ -89,4 +89,6 @@ for($i=0; $i<count($lines); $i++)
 $ret = rtrim($ret);
 echo $ret;
 
+$mysqli->close();
+
 ?>

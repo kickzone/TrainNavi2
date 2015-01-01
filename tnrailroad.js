@@ -50,6 +50,10 @@ TNRailroad.prototype = {
 		sha.alpha = 0.8;
 		//stageに追加
 		stage.addChild(sha);
+		//エディットモード用の対処
+		if(TNView.getEditMode()){
+			TNEdit.setRailHandlers(this);
+		}
 	},
 	//2番目の点
 	secondPoint : function(isNobori){
@@ -142,7 +146,10 @@ TNRailroad.prototype = {
 			}
 		}
 	},
-
+	//長さ
+	calcDistance : function(){
+		return Math.sqrt(Math.pow(this.end.latitude - this.start.latitude, 2) + Math.pow(this.end.longitude - this.start.longitude, 2));
+	},
 	inCanvas : function(){
 		var xmin = this.sizeX >= 0? this.shape.x : this.shape.x + this.sizeX;
 		var xmax = this.sizeX >= 0? this.shape.x + this.sizeX : this.shape.x;

@@ -68,7 +68,10 @@ TNStation.prototype = {
 			if(this.scale <= 16.0) stage.addChild(shaEki);
 			this.onStage = true;
 		}
-
+		//エディットモード用の対処
+		if(TNView.getEditMode()){
+			TNEdit.setStationHandlers(this);
+		}
 		this.absX = absX;
 		this.absY = absY;
 	},

@@ -55,11 +55,11 @@ canvas {  }
 </head>
 <body>
 <div><select name="lineName[]" size="5" id="linelist" class="linelist" multiple></select></div>
-<div id="prop"></div>  パッケージファイル読み込み：<input type="file" id="package" name="package" /> <BR>
+<div id="prop"></div>  パッケージファイル読み込み(開発中)：<input type="file" id="package" name="package" /> <BR>
 <div class="cpanel">
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
 <BR>
-<input type="checkbox" id="useNow">現在時刻から開始<input type="checkbox" id="useGmap">Googleマップと連携する
+<input type="checkbox" id="useNow">現在時刻から開始<input type="checkbox" id="useGmap">Googleマップと連携する<input type="checkbox" id="editMode">エディットモード(開発中)
 <br>
 <input type="radio" id="weekday" name="service" value="1" checked>平日ダイヤ
 <input type="radio" id="holiday" name="service" value="2">休日ダイヤ
@@ -71,7 +71,7 @@ canvas {  }
 <input type="radio" id="sizeFull" name="size" value="1" checked>画面に合わせる
 <input type="radio" id="size1600" name="size" value="2">1600*900
 <input type="radio" id="size1024" name="size" value="3">1024*768
-<input type="button" value="Start!" onclick="Start()"/><span id="status"></span><br />
+<input type="button" id="start" value="Start!"/><span id="status"></span><br />
 </div>
 <div id="wrapper">
 <canvas>
@@ -81,6 +81,7 @@ canvas {  }
 </div>
 <div id="history">
 <P>履歴</P>
+<P>2015/01/01 エディットモード作成、小田急多摩線・箱根登山鉄道全線と小田急小田原線の一部の路線を再現</P>
 <P>2014/12/31 Googleマップと連携できるようにした。ダブルクリックで衛星/地図の切り替えができる。tnhalfwayテーブルに対応した。</P>
 <P>2014/12/29 トップをhtmlに変更してphpを追い出した。路線15追加(都営地下鉄浅草線、京急本線、空港線、久里浜線、逗子線、大師線、京成本線、押上線、千葉線、千原線、金町線、成田スカイアクセス・北総線、東成田線、芝山鉄道線、新京成線)</P>
 <P>2014/12/21 大江戸線などの同一駅が2回出現する環状線に対応、路線7つ追加(東京メトロ南北線、銀座線、丸ノ内線、都営地下鉄三田線、大江戸線、埼玉高速鉄道線、東急目黒線)</P>
@@ -105,6 +106,7 @@ canvas {  }
 <script src="tnrailroad.js"></script>
 <script src="tntrain.js"></script>
 <script src="tntrainkind.js"></script>
+<script src="tnedit.js"></script>
 <script>
 
 $(window).load(function () {
@@ -116,7 +118,7 @@ $(window).load(function () {
 });
 
 document.getElementById("package").addEventListener('change', openPackage, false);
-
+$("#start").click(Start);
 
 function LoadLineFromDB()
 {
@@ -181,8 +183,7 @@ function Start()
 	history.css("margin-top", sizeY + "px");
 
 	//Googleマップと連携
-	if($("#useGmap").prop('checked'))
-	{
+	if($("#useGmap").prop('checked')){
 		var gmap = $("#googlemap");
 		gmap.css("width",sizeX);
 		gmap.css("height",sizeY);
@@ -193,10 +194,12 @@ function Start()
 		speed : parseInt(speed),
 		fps : parseInt(fps),
 		service : parseInt($("input[name='service']:checked").val()),
+		editMode : $("#editMode").prop('checked'),
 	};
 	TNModel.init(lst, option);
 	option = {
 		dest : parseInt($("input[name='dest']:checked").val()),
+		editMode : $("#editMode").prop('checked'),
 	};
 	TNView.init(option);
 	//Googleマップ初期化
@@ -213,7 +216,22 @@ function Start()
 	    TNView.setGmap(map);
 	}
 
-	TNModel.start();
+	if(!$("#editMode").prop('checked'))
+	{
+		TNModel.start();
+	}
+	else
+	{
+		$("#start").val("save");
+		$("#start").off("click");
+		$("#start").click(Save);
+	}
+}
+
+function Save()
+{
+	TNEdit.save();
+	$("#start").val("saved!");
 }
 </script>
 </body>
