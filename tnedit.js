@@ -250,13 +250,18 @@ var TNEdit = (function(){
 		$.each(lines, function(i, line){
 			if(line.modifiedHalfways){
 				//halfwaysを保存
-				var halfways_kilo = [];
-				var halfways_lat = [];
-				var halfways_lon = [];
+				var halfways_kilo = "";
+				var halfways_lat = "";
+				var halfways_lon = "";
 				$.each(line.halfways, function(j, halfway){
-					halfways_kilo.push(halfway.kilo);
-					halfways_lat.push(halfway.latitude);
-					halfways_lon.push(halfway.longitude);
+					if(j != 0){
+						halfways_kilo += " ";
+						halfways_lat += " ";
+						halfways_lon += " ";
+					}
+					halfways_kilo += String(halfway.kilo)
+					halfways_lat += String(halfway.latitude);
+					halfways_lon += String(halfway.longitude);
 				});
 				$.ajax({
 					async: true,
