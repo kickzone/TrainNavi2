@@ -87,14 +87,16 @@ var TNModel = (function(){
 		if(csvLines)
 		{
 			$.each(csvLines, function(i, val){
-				if(val.indexOf("-") == 0)
-				{
-					var lineid = val.substring(1, val.indexOf(","));
-					currentLine = lines[lineid-1];
-				}
-				else
-				{
-					currentLine.halfways.push(new TNHalfway(currentLine, val));
+				if(val.length != 0){
+					if(val.indexOf("-") == 0)
+					{
+						var lineid = val.substring(1, val.indexOf(","));
+						currentLine = lines[lineid-1];
+					}
+					else
+					{
+						currentLine.halfways.push(new TNHalfway(currentLine, val));
+					}
 				}
 			});
 		}

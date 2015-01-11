@@ -81,6 +81,7 @@ canvas {  }
 </div>
 <div id="history">
 <P>履歴</P>
+<P>2015/01/11 パッケージファイル読み込み、路線図作成まで実装。<A HREF="package.zip">サンプルファイル</A>。路線5つ追加(山手線、京浜東北線、根岸線、横浜線、相模線) 路線図詳細は随時作成中</P>
 <P>2015/01/01 エディットモード作成、小田急小田原線・多摩線と箱根登山鉄道の一部路線を再現</P>
 <P>2014/12/31 Googleマップと連携できるようにした。ダブルクリックで衛星/地図の切り替えができる。tnhalfwayテーブルに対応した。</P>
 <P>2014/12/29 トップをhtmlに変更してphpを追い出した。路線15追加(都営地下鉄浅草線、京急本線、空港線、久里浜線、逗子線、大師線、京成本線、押上線、千葉線、千原線、金町線、成田スカイアクセス・北総線、東成田線、芝山鉄道線、新京成線)</P>
@@ -140,8 +141,19 @@ function openPackage(evt)
 	var files = evt.target.files;
 	//TNDbに丸投げ
 	TNDb.openPackage(files[0]);
-	//路線一覧をゲット
-	var lines = TNDb.packageLines();
+	//読み込み処理が終わるまで待つ
+	var wait = setInterval(function() {
+	    if (!TNDb.isLoading()) {
+	    	//初期化が終わった
+	    	clearInterval(wait);
+	    	//路線一覧をゲット
+	    	$('#linelist > option').remove();
+	    	var lines = TNDb.packageLines();
+			$.each(lines, function(i, line){
+				$('#linelist').append($('<option>').html(line).val(line));
+			});
+	    }
+	}, 100);
 }
 
 function Start()

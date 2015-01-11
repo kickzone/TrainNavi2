@@ -6,6 +6,12 @@ var TNDb = (function(){
 	//パッケージファイルを使うかどうか
 	//使わない場合はDBを読む
 	var packageFile = "";
+	var zip;
+	var PACK_STATIC = "package_static.tn";
+	var onLoading = false;
+
+	//パッケージファイル内の路線一覧
+	var packageLines = [];
 
 	//スキンファイル(現時点無効)
 	var skinFile = "";
@@ -99,12 +105,63 @@ var TNDb = (function(){
 
 	function readLinesFromPackage()
 	{
-
+		var textStatic = zip.file(PACK_STATIC).asText();
+		var retLines = textStatic.split("\n");
+		var currentArr = [];
+		var isValidLine = false;
+		for(var i=0; i<retLines.length; i++)
+		{
+			//セクションが始まった
+			if(retLines[i].indexOf("[") == 0)
+			{
+				var sectionName = retLines[i].substring(1, retLines[i].length-1);
+				currentArr = [];
+				dbBuffer[sectionName] = currentArr;
+			}
+			else
+			{
+				if(retLines[i].indexOf("-") == 0 || sectionName == "line"){
+					//有効な路線かどうかチェック
+					var items = retLines[i].split(",");
+					if(validLines.indexOf(items[1]) == -1) isValidLine = false;
+					else isValidLine = true;
+				}
+				if(isValidLine) currentArr.push(retLines[i]);
+			}
+		}
 	}
 
 	function openPackageMain()
 	{
+		//zipファイルをfilereaderで開く
+		var reader = new FileReader();
 
+		reader.onload = function(e) {
+			zip = new JSZip(e.target.result);
+			//路線一覧をゲットしておく
+			packageLines = [];
+			var textStatic = zip.file(PACK_STATIC).asText();
+			var aLines = textStatic.split("\n");
+			var existLine = false;
+			for(var i=0; i<aLines.length; i++)
+			{
+				if(aLines[i].indexOf("[") == 0)
+				{
+					if(existLine) break;
+					else if(aLines[i].indexOf("[line]") == 0) existLine = true;
+				}
+				else if(existLine)
+				{
+					var lineItems = aLines[i].split(",");
+					packageLines.push(lineItems[1]);
+				}
+			}
+			onLoading = false;
+		}
+		// read the file !
+		// readAsArrayBuffer and readAsBinaryString both produce valid content for JSZip.
+		onLoading = true;
+		reader.readAsArrayBuffer(packageFile);
 	}
 
 	function ToStringTime(time)
@@ -158,7 +215,9 @@ var TNDb = (function(){
 				//本当にこれでいいんかね？要確認
 				delete dbBuffer[sectionName];
 			}
-		}
+		},
+		packageLines : function() {return packageLines; },
+		isLoading : function() {return onLoading; }
 	};
 
 })();

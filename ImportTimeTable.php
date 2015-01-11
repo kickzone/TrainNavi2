@@ -463,7 +463,7 @@ function SelectLine($stationName, $dom, $mysqli, $trainKind)
 		if($start)
 		{
 			$currentStationName = $currentStation[0];
-			$query = "SELECT linename FROM tnstation WHERE stationname like '%$currentStationName'";
+			$query = "SELECT DISTINCT linename FROM tnstation WHERE stationname like '$currentStationName'";
 			$result = ExecQuery($mysqli, $query);
 			if($result->num_rows==1)
 			{
@@ -500,7 +500,6 @@ function SelectLine($stationName, $dom, $mysqli, $trainKind)
 					//$possibleLinesの路線が含まれていなければ削除
 					//1つだけ残ったところでそれを確定する
 					$thisLines = array();
-					$thisLines[$row['linename']] = 1;
 					while($row = $result->fetch_assoc())
 					{
 						$thisLines[$row['linename']] = 1;
@@ -765,6 +764,13 @@ function SpecialChange($stationName, $currentLineName, $trainKind, $dom)
 		return "京成東成田線";
 	}
 
+	if($stationName == "東神奈川" && $currentLineName == "横浜線" && ExistStationAfter($dom, "横浜", "東神奈川") ){
+		return "京浜東北線";
+	}
+
+	if($stationName == "横浜" && $currentLineName == "根岸線" && ExistStationAfter($dom, "大口", "東神奈川") ){
+		return "京浜東北線";
+	}
 
 	return "";
 }
