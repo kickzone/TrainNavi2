@@ -55,7 +55,7 @@ canvas {  }
 </head>
 <body>
 <div><select name="lineName[]" size="5" id="linelist" class="linelist" multiple></select></div>
-<div id="prop"></div>  パッケージファイル読み込み(開発中)：<input type="file" id="package" name="package" /> <BR>
+<div id="prop"></div>  パッケージファイル読み込み：<input type="file" id="package" name="package" /> <BR>
 <div class="cpanel">
 <input type="text" id="hour" value="5">時<input type="text" id="minute" value="0">分開始<input type="text" id="speed" value="60">倍速 <input type="text" id="fps" value="15">fps
 <BR>
@@ -81,7 +81,8 @@ canvas {  }
 </div>
 <div id="history">
 <P>履歴</P>
-<P>2015/01/11 パッケージファイル読み込み、路線図作成まで実装。<A HREF="package.zip">サンプルファイル</A>。路線5つ追加(山手線、京浜東北線、根岸線、横浜線、相模線) 路線図詳細は随時作成中</P>
+<P>2015/01/18 パッケージファイル読み込み完全対応、ベジェ曲線は廃止</P>
+<P>2015/01/11 パッケージファイル読み込み、路線図作成まで実装。<A HREF="./package.zip">サンプルファイル</A>。路線5つ追加(山手線、京浜東北線、根岸線、横浜線、相模線) 路線図詳細は随時作成中</P>
 <P>2015/01/01 エディットモード作成、小田急小田原線・多摩線と箱根登山鉄道の一部路線を再現</P>
 <P>2014/12/31 Googleマップと連携できるようにした。ダブルクリックで衛星/地図の切り替えができる。tnhalfwayテーブルに対応した。</P>
 <P>2014/12/29 トップをhtmlに変更してphpを追い出した。路線15追加(都営地下鉄浅草線、京急本線、空港線、久里浜線、逗子線、大師線、京成本線、押上線、千葉線、千原線、金町線、成田スカイアクセス・北総線、東成田線、芝山鉄道線、新京成線)</P>
@@ -107,6 +108,7 @@ canvas {  }
 <script src="tnrailroad.js"></script>
 <script src="tntrain.js"></script>
 <script src="tntrainkind.js"></script>
+<script src="tntrainheader.js"></script>
 <script src="tnedit.js"></script>
 <script>
 

@@ -33,14 +33,14 @@ var TNTrain = function(line, text){
 			startStationID = elements[i-2];
 		}
 		route.startStation = line.getStation(parseInt(startStationID));
-		route.startTime = MakeTime(elements[i+1]);
+		route.startTime = TNFuncs.makeTime(elements[i+1]);
 		if(elements[i+1] == "")
 		{
-			route.startTime = MakeTime(elements[i-1]);
+			route.startTime = TNFuncs.makeTime(elements[i-1]);
 		}
 		//ToDo:路線の一部の駅だけ読み込んだ場合に対応する必要がある
 		route.endStation = line.getStation(parseInt(elements[i+2]));
-		route.endTime = MakeTime(elements[i+3]);
+		route.endTime = TNFuncs.makeTime(elements[i+3]);
 		this.routes.push(route);
 	}
 
@@ -114,27 +114,6 @@ var TNTrain = function(line, text){
 	this.started = false;
 	//終点まで来たかどうか
 	this.ended = false;
-
-	//時刻をDateオブジェクトに変換
-	function MakeTime(timeStr)
-	{
-		var hhmm = timeStr.split(":");
-		var h = parseInt(hhmm[0]);
-		var m = parseInt(hhmm[1]);
-		//StartTime基準で
-		var ret = TNModel.getStartTime();
-
-		//3時台までは深夜列車とみなす
-		if(h < 4)
-		{
-			ret.setDate(ret.getDate()+1);
-		}
-		ret.setHours(h);
-		ret.setMinutes(m);
-		ret.setSeconds(0);
-		ret.setMilliseconds(0);
-		return ret;
-	}
 }
 
 //メンバ関数

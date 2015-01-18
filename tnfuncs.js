@@ -140,6 +140,27 @@ var TNFuncs = (function(){
 		return latlng;
 	}
 
+	//時刻をDateオブジェクトに変換
+	function MakeTime(timeStr)
+	{
+		var hhmm = timeStr.split(":");
+		var h = parseInt(hhmm[0]);
+		var m = parseInt(hhmm[1]);
+		//StartTime基準で
+		var ret = TNModel.getStartTime();
+
+		//3時台までは深夜列車とみなす
+		if(h < 4)
+		{
+			ret.setDate(ret.getDate()+1);
+		}
+		ret.setHours(h);
+		ret.setMinutes(m);
+		ret.setSeconds(0);
+		ret.setMilliseconds(0);
+		return ret;
+	}
+
 	//public
 	return{
 		calcBisectUnitVector: calcBisectUnitVector,
@@ -151,6 +172,7 @@ var TNFuncs = (function(){
 		isRectOverlapped : isRectOverlapped,
 		fromLatLngToPoint : fromLatLngToPoint,
 		fromPointToLatLng : fromPointToLatLng,
+		makeTime : MakeTime,
 	};
 
 

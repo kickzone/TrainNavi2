@@ -45,6 +45,14 @@ var TNModel = (function(){
 		DB.readLines();
 	}
 
+	function GetLine(lineid){
+		var retLine = null;
+		$.each(lines, function(i, line){
+			if(line.lineID == lineid) retLine = line;
+		});
+		return retLine;
+	}
+
 	function makeLines(aStrLines)
 	{
 		readLines(aStrLines);
@@ -60,7 +68,7 @@ var TNModel = (function(){
 			if(val.indexOf("-") == 0)
 			{
 				var lineid = val.substring(1, val.indexOf(","));
-				currentLine = lines[lineid-1];
+				currentLine = GetLine(parseInt(lineid));
 			}
 			else
 			{
@@ -74,7 +82,7 @@ var TNModel = (function(){
 			if(val.indexOf("-") == 0)
 			{
 				var lineid = val.substring(1, val.indexOf(","));
-				currentLine = lines[lineid-1];
+				currentLine = GetLine(parseInt(lineid));
 			}
 			else
 			{
@@ -91,7 +99,7 @@ var TNModel = (function(){
 					if(val.indexOf("-") == 0)
 					{
 						var lineid = val.substring(1, val.indexOf(","));
-						currentLine = lines[lineid-1];
+						currentLine = GetLine(parseInt(lineid));
 					}
 					else
 					{
@@ -221,7 +229,7 @@ var TNModel = (function(){
 			if(val.indexOf("-") == 0)
 			{
 				var lineid = val.substring(1, val.indexOf(","));
-				currentLine = lines[lineid-1];
+				currentLine = GetLine(parseInt(lineid));
 			}
 			else
 			{
@@ -273,11 +281,11 @@ var TNModel = (function(){
 			trains = [];
 			DB = TNDb;
 			View = TNView;
-			makeLines(aStrLines);
 			speed = option.speed;
 			fps = option.fps;
 			startTime = option.startTime;
 			service = option.service;
+			makeLines(aStrLines);
 			this.viewProp(null);
 			$("#status").text("路線情報読み込み終了");
 			$("#prop").text("");

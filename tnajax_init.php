@@ -82,7 +82,7 @@ for($i=0; $i<count($lines); $i++)
 		$ret .= "-$lineID,$lines[$i]\n";
 		while($row = $result->fetch_assoc())
 		{
-			$ret .= $row['kilo'].",".$row['latitude'].",".$row['longitude'].",".$row['sp1lat1'].",".$row['sp1lon1'].",".$row['sp1lat2'].",".$row['sp1lon2'].",".$row['sp2lat1'].",".$row['sp2lon1'].",".$row['sp2lat2'].",".$row['sp2lon2']."\n";
+			$ret .= $row['kilo'].",".$row['latitude'].",".$row['longitude']."\n";
 		}
 	}
 }
